@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sub2API - 系统架构图</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; }
+  h1 { text-align: center; color: #58a6ff; margin-bottom: 30px; }
+  .mermaid { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 30px; overflow-x: auto; }
+  h2 { color: #f0883e; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<h1>Sub2API — AI API 网关平台架构图</h1>
+
+<h2>1. 整体系统架构</h2>
+<div class="mermaid">
+graph TB
+    subgraph Clients["🌍 下游客户端"]
+        CC["Claude Code"]
+        OS_SDK["OpenAI SDK"]
+        GS["Gemini SDK"]
+        WEB_UI["Web 管理后台"]
+    end
+
+    subgraph Frontend["🖥️ Frontend — Vue 3 + TypeScript + Vite"]
+        direction TB
+        Router["Vue Router 4<br/>hashless history mode"]
+        Pinia["Pinia Stores<br/>app · auth · subscriptions<br/>announcements · payment<br/>adminSettings · onboarding"]
+        Axios["Axios HTTP Client<br/>JWT 自动刷新"]
+        I18N["vue-i18n<br/>中/英/日三语"]
+        Chart["Chart.js + vue-chartjs<br/>数据可视化"]
+
+        subgraph Views["页面视图"]
+            direction LR
+            UserPages["用户端<br/>Dashboard · Keys · Usage<br/>Profile · Redeem · Payment<br/>Subscriptions · Affiliate<br/>ChannelStatus"]
+            AdminPages["管理端<br/>Dashboard · Users · Groups<br/>Accounts · Channels · Proxies<br/>Subscriptions · Orders · Settings<br/>Ops · Backups · Announcements"]
+            AuthPages["认证<br/>Login · Register · 2FA<br/>OAuth 回调 · 密码重置"]
+            SetupWizard["SetupWizard<br/>首次运行引导"]
+        end
+
+        subgraph Components["共享组件"]
+            LayoutC["Layout · Sidebar · Navbar"]
+            PaymentC["Payment · QRCode · Stripe"]
+            GuideC["Guide · Onboarding"]
+            ChartsC["Charts · Stats · Trends"]
+        end
+    end
+
+    subgraph Backend["⚙️ Backend — Go 1.26 + Gin + Ent"]
+        direction TB
+
+        subgraph EntryLayer["入口层"]
+            MainGo["cmd/server/main.go<br/>启动引导 · 优雅关闭"]
+            WireDI["wire.go → wire_gen.go<br/>Google Wire 依赖注入<br/>Application + Cleanup<br/>25+ 后台服务生命周期"]
+        end
+
+        subgraph MiddlewareLayer["中间件链"]
+            direction LR
+            APIKeyAuth["APIKeyAuth<br/>x-api-key 验证<br/>L1 内存 LRU<br/>L2 Redis 缓存"]
+            JWTAuth["JWTAuth<br/>用户/管理员会话"]
+            AdminAuth["AdminAuth<br/>角色权限检查"]
+            RateLimit["RateLimiter<br/>Redis 令牌桶<br/>可配置 fail-close"]
+            CORS["CORS<br/>SecurityHeaders<br/>Recovery"]
+            Logger["RequestLogger<br/>ClientRequestID<br/>BodyLimit"]
+        end
+
+        subgraph HandlerLayer["Handler 层 — HTTP 控制器"]
+            direction TB
+            GatewayH["GatewayHandler<br/>Claude Messages · CountTokens<br/>Models · Usage · Codex"]
+            OpenAIGWH["OpenAIGatewayHandler<br/>Responses · Chat Completions<br/>WebSocket · Images"]
+            GeminiH["GeminiV1BetaHandler<br/>Gemini API 兼容"]
+            AGH["Antigravity Handlers<br/>Antigravity 专用路由"]
+
+            AuthH["AuthHandler<br/>注册 · 登录 · 2FA · Tokens"]
+            UserH["UserHandler<br/>Profile · Keys · Usage<br/>Subscriptions · Redeem"]
+            PaymentH["PaymentHandler<br/>下单 · 查询 · 取消"]
+            WebhookH["PaymentWebhookHandler<br/>支付宝 · 微信 · Stripe"]
+
+            AdminDashboard["Admin Dashboard<br/>统计 · 快照 · 实时数据"]
+            AdminUsers["Admin Users · Groups<br/>Accounts · Proxies<br/>Channels · Subscriptions"]
+            AdminOps["Admin Ops (~45 API)<br/>实时监控 · 告警 · 错误<br/>延迟 · 吞吐 · 系统日志"]
+            AdminPayment["Admin Payment<br/>订单管理 · 方案管理<br/>退款处理"]
+            AdminSettings["Admin Settings<br/>系统设置 · 数据管理<br/>备份 · TLS指纹"]
+        end
+
+        subgraph ServiceLayer["Service 层 — 业务逻辑 (~250+ 文件)"]
+            direction TB
+            GatewaySvc["GatewayService<br/>请求转发 · 账户调度<br/>用量记录 · 版本检查"]
+            OpenAIGWSvc["OpenAIGatewayService<br/>Responses · Chat · WS<br/>图片生成 · 消息路由"]
+            AccountSvc["AccountService<br/>账户管理 · 调度快照<br/>CRS同步 · 定时任务"]
+
+            BillingSvc["BillingService<br/>Token 级计费<br/>余额检查 · 熔断"]
+            UsageSvc["UsageService<br/>用量日志 · 统计<br/>异步写入 Worker Pool"]
+            SchedulerSvc["SchedulerService<br/>负载感知调度<br/>粘性会话 · 故障转移"]
+
+            AuthSvc["AuthService<br/>OAuth流程 · TOTP<br/>令牌刷新"]
+            PaymentBizSvc["PaymentService<br/>订单生命周期<br/>履约 · 退款 · 统计"]
+            OpsSvc["OpsService<br/>指标采集 · 聚合<br/>告警评估 · 清理"]
+
+            ConcurrencySvc["ConcurrencyService<br/>RPM · 并发槽位<br/>会话限制"]
+            ChannelSvc["ChannelMonitor<br/>健康检查 · 聚合<br/>定时测试"]
+            InfraSvc["Infra Services<br/>邮件队列 · 备份 · 更新<br/>幂等 · 数据管理"]
+        end
+
+        subgraph RepositoryLayer["Repository 层 — 数据访问"]
+            direction LR
+            PGRepo["PostgreSQL (Ent ORM)<br/>user_repo · account_repo<br/>api_key_repo · billing_repo<br/>payment_repo · ops_repo<br/>channel_repo · backup_repo<br/>... 40+ 实体"]
+            RedisRepo["Redis Cache<br/>api_key_cache · billing_cache<br/>scheduler_cache · gateway_cache<br/>rpm_cache · token_cache<br/>concurrency_cache · session_cache<br/>ops_cache · email_cache"]
+            ExternalClients["External API Clients<br/>Claude OAuth · OpenAI OAuth<br/>Gemini OAuth · Turnstile<br/>GitHub Release · CRS Sync<br/>Pricing · Proxy Probe"]
+        end
+
+        subgraph PaymentProviders["Payment 层 — 支付渠道"]
+            Alipay["Alipay<br/>smartwalle SDK"]
+            WxPay["WeChat Pay<br/>wechatpay-apiv3 SDK"]
+            Stripe["Stripe<br/>stripe-go SDK"]
+            EasyPay["EasyPay<br/>自定义回调"]
+            PayFactory["Provider Factory<br/>渠道注册 · 负载均衡"]
+        end
+    end
+
+    subgraph DataStore["💾 持久化层"]
+        PG[("PostgreSQL 15+<br/>主数据库<br/>~130+ 迁移文件")]
+        Redis[("Redis 7+<br/>缓存 · 会话<br/>限流 · 队列")]
+        S3[("AWS S3<br/>数据库备份<br/>pg_dump 归档")]
+    end
+
+    subgraph External["🌍 上游 AI 服务"]
+        Anthropic["Anthropic API<br/>api.anthropic.com"]
+        OpenAI["OpenAI API<br/>api.openai.com"]
+        Gemini["Google Gemini<br/>generativelanguage.googleapis.com"]
+        Antigravity["Antigravity<br/>替代访问渠道"]
+        LinuxDo["LinuxDo Connect<br/>SSO 登录"]
+        OIDC["Generic OIDC<br/>企业 SSO"]
+    end
+
+    %% 连线
+    Clients -->|HTTP/SSE/WS| Backend
+    WEB_UI --> Frontend
+    Frontend -->|REST API| Backend
+
+    MainGo --> WireDI
+    WireDI --> MiddlewareLayer
+    MiddlewareLayer --> HandlerLayer
+    HandlerLayer --> ServiceLayer
+    ServiceLayer --> RepositoryLayer
+    ServiceLayer --> PaymentProviders
+
+    GatewayH --> GatewaySvc
+    OpenAIGWH --> OpenAIGWSvc
+
+    RepositoryLayer --> DataStore
+    PGRepo --> PG
+    RedisRepo --> Redis
+    ExternalClients --> External
+    PaymentProviders --> External
+
+    GatewaySvc --> Anthropic
+    OpenAIGWSvc --> OpenAI
+    GeminiH --> Gemini
+    AGH --> Antigravity
+
+    style Frontend fill:#1a2332,stroke:#58a6ff,color:#c9d1d9
+    style Backend fill:#1a2332,stroke:#3fb950,color:#c9d1d9
+    style EntryLayer fill:#162030,stroke:#58a6ff,color:#c9d1d9
+    style MiddlewareLayer fill:#162030,stroke:#7ee787,color:#c9d1d9
+    style HandlerLayer fill:#162030,stroke:#d2a8ff,color:#c9d1d9
+    style ServiceLayer fill:#162030,stroke:#f0883e,color:#c9d1d9
+    style RepositoryLayer fill:#162030,stroke:#f778ba,color:#c9d1d9
+    style PaymentProviders fill:#162030,stroke:#e5534b,color:#c9d1d9
+    style DataStore fill:#1a2332,stroke:#f0883e,color:#c9d1d9
+    style External fill:#1a2332,stroke:#8b949e,color:#c9d1d9
+</div>
+
+<h2>2. 核心网关请求流程序列图</h2>
+<div class="mermaid">
+sequenceDiagram
+    actor C as 👤 客户端<br/>(Claude Code / SDK)
+    participant MW as 🔐 中间件链
+    participant GW as 🚪 GatewayHandler
+    participant CC as 🔒 ConcurrencyHelper
+    participant SCH as 🎯 Scheduler
+    participant FWD as 📡 Forwarder
+    participant UP as 🌍 上游 AI API
+    participant USG as 📊 Usage Recorder
+    participant Redis as 🗄️ Redis
+
+    C->>MW: POST /v1/messages<br/>Header: x-api-key
+    MW->>MW: RequestBodyLimit → ClientRequestID
+    MW->>MW: OpsErrorLogger → EndpointNormalizer
+
+    rect rgb(25,35,50)
+    Note over MW,Redis: API Key 多级认证
+    MW->>MW: decodeAPIKey(x-api-key)
+    MW->>Redis: L1 内存 LRU 缓存查询
+    alt 缓存命中
+        Redis-->>MW: apiKey + AuthSubject
+    else 缓存未命中
+        MW->>Redis: L2 Redis 查询
+        Redis-->>MW: apiKey + AuthSubject
+    end
+    MW->>MW: 解析 user · group · subscription
+    end
+
+    MW->>MW: RequireGroupAssignment
+
+    rect rgb(30,40,50)
+    Note over GW,CC: 并发控制
+    GW->>CC: 检查等待队列 (最大排队数)
+    CC->>CC: 获取用户并发槽位
+    CC->>CC: 计费资格检查 (余额/订阅/配额)
+    end
+
+    rect rgb(30,40,50)
+    Note over GW,SCH: 粘性会话 + 账户调度
+    GW->>Redis: 查询粘性会话 (hash → account_id)
+    GW->>SCH: 负载感知账户选择
+    SCH->>SCH: 模型可用性检查
+    SCH->>SCH: 账户槽位获取
+    SCH->>SCH: 用户消息队列 (OAuth 串行化)
+    end
+
+    rect rgb(35,30,45)
+    Note over GW,UP: 请求转发
+    GW->>FWD: 按平台路由 (Anthropic/OpenAI/Gemini/Antigravity)
+    FWD->>FWD: TLS 指纹模拟 (utls)
+    FWD->>FWD: 代理路由 (可选 forward/socks5)
+    FWD->>UP: SSE 流式请求透传
+    UP-->>FWD: SSE 流式响应
+    FWD->>FWD: 响应头安全过滤
+    end
+
+    rect rgb(30,35,40)
+    Note over GW,USG: 后处理
+    GW->>Redis: 保存粘性会话绑定 (account_id)
+    GW->>Redis: RPM 计数器递增
+    GW->>USG: 异步用量记录提交 (Worker Pool)
+    GW->>GW: Ops 指标采集
+    end
+
+    GW-->>C: SSE Streaming Response
+</div>
+
+<h2>3. 认证与支付流程</h2>
+<div class="mermaid">
+sequenceDiagram
+    actor U as 👤 用户
+    participant FE as 🖥️ Vue Frontend
+    participant Auth as 🔐 AuthHandler
+    participant Pay as 💰 PaymentHandler
+    participant Prov as 🏦 支付渠道
+    participant WH as 📨 WebhookHandler
+    participant DB as 💾 PostgreSQL
+
+    rect rgb(25,35,50)
+    Note over U,DB: 认证流程
+    U->>FE: 登录页面
+    FE->>Auth: POST /api/v1/auth/login
+    Auth->>DB: 验证凭据
+    alt 2FA 已启用
+        Auth-->>FE: { requires_2fa: true }
+        FE->>U: 输入 TOTP 验证码
+        FE->>Auth: POST /api/v1/auth/login/2fa
+    end
+    Auth->>DB: 签发 access_token + refresh_token
+    Auth-->>FE: { tokens, user_info }
+    FE->>FE: localStorage 存储 tokens
+    FE->>FE: Axios 拦截器附加 Bearer token
+
+    loop Token 自动刷新
+        Note over FE,Auth: 401 响应 → POST /auth/refresh → 新 token
+    end
+    end
+
+    rect rgb(30,40,50)
+    Note over U,DB: 支付流程
+    U->>FE: 选择订阅方案
+    FE->>Pay: GET /api/v1/payment/plans
+    Pay-->>FE: 可用方案列表
+    FE->>Pay: GET /api/v1/payment/channels
+    Pay-->>FE: 可用支付渠道
+
+    U->>FE: 选择渠道 → 确认下单
+    FE->>Pay: POST /api/v1/payment/orders
+    Pay->>DB: 创建订单记录
+    Pay->>Prov: 按渠道路由 (支付宝/微信/Stripe/EasyPay)
+    Prov-->>Pay: 支付 URL / QR Code
+    Pay-->>FE: { order_id, payment_url }
+    end
+
+    rect rgb(35,30,45)
+    Note over U,WH: 支付回调
+    FE->>U: 展示 QR Code / 跳转支付页
+    U->>Prov: 完成支付
+    Prov->>WH: POST webhook (签名验证)
+    WH->>WH: 验证签名 ✓
+    WH->>DB: 更新订单状态
+    WH->>DB: 执行履约 (增加余额 / 激活订阅)
+    WH-->>Prov: 200 OK
+    end
+
+    FE->>Pay: GET /api/v1/payment/orders/:id
+    Pay-->>FE: { status: "completed" }
+    FE->>U: 显示支付成功
+</div>
+
+<h2>4. 后端分层架构详解</h2>
+<div class="mermaid">
+graph TB
+    subgraph L0["入口 — cmd/server/"]
+        ENTRY["main.go<br/>--setup / --version / 正常启动<br/>加载配置 · 初始化日志<br/>Wire DI 构建 Application<br/>HTTP Server + 优雅关闭"]
+        WIRE["wire.go<br/>Application { Server, Cleanup }<br/>25+ 后台服务生命周期管理<br/>定时任务 · Worker Pool · 监控"]
+    end
+
+    subgraph L1["中间件链 — internal/server/middleware/"]
+        direction LR
+        M1["APIKeyAuth<br/>解码 · 缓存查询<br/>AuthSubject 注入"]
+        M2["JWTAuth<br/>用户/管理员会话"]
+        M3["AdminAuth<br/>角色权限"]
+        M4["RateLimiter<br/>Redis 令牌桶"]
+        M5["Security<br/>CORS · CSP<br/>安全头 · 恢复"]
+    end
+
+    subgraph L2["Handler — internal/handler/"]
+        direction TB
+        H1["Gateway Handlers<br/>Claude · OpenAI · Gemini<br/>Antigravity · Codex"]
+        H2["Auth Handlers<br/>注册 · 登录 · 2FA<br/>OAuth (LinuxDo/OIDC/WeChat)"]
+        H3["User Handlers<br/>Profile · API Keys · Usage<br/>Redeem · Subscriptions"]
+        H4["Payment Handlers<br/>下单 · 订单查询 · Webhook"]
+        H5["Admin Handlers (~200 API)<br/>Dashboard · Users · Groups<br/>Accounts · Channels · Proxies<br/>Ops · Settings · Backups<br/>Payment · Subscriptions"]
+    end
+
+    subgraph L3["Service — internal/service/ (~250+ 文件)"]
+        direction TB
+        S1["网关核心<br/>Gateway · OpenAIGW<br/>GeminiCompat · AntigravityGW"]
+        S2["账户调度<br/>Account · Scheduler<br/>Concurrency · RPM · Session"]
+        S3["计费用量<br/>Billing · Usage<br/>Pricing · WorkerPool"]
+        S4["支付系统<br/>Order · Fulfillment<br/>Webhook · Refund · Stats"]
+        S5["运维监控<br/>Ops · Metrics · Alerts<br/>Realtime · Trends · Health"]
+        S6["基础设施<br/>Email · Backup · Update<br/>Idempotency · Channel · CRS"]
+    end
+
+    subgraph L4["Repository — internal/repository/"]
+        direction LR
+        R1["PostgreSQL (Ent)<br/>40+ 实体仓储<br/>user · account · api_key<br/>billing · payment · ops<br/>channel · subscription<br/>backup · announcement"]
+        R2["Redis Cache<br/>20+ 缓存模块<br/>api_key · billing · scheduler<br/>gateway · rpm · token<br/>concurrency · session<br/>ops · email"]
+        R3["External Clients<br/>Claude · OpenAI · Gemini OAuth<br/>Turnstile · GitHub Release<br/>CRS Sync · Pricing · Proxy"]
+    end
+
+    subgraph L5["Payment Providers — internal/payment/provider/"]
+        direction LR
+        P1["Alipay<br/>smartwalle SDK"]
+        P2["WeChat Pay<br/>wechatpay-apiv3"]
+        P3["Stripe<br/>stripe-go"]
+        P4["EasyPay<br/>自定义回调"]
+        P5["Factory<br/>注册 · 负载均衡"]
+    end
+
+    ENTRY --> WIRE
+    WIRE --> L1
+    L1 --> L2
+    L2 --> L3
+    L3 --> L4
+    L3 --> L5
+    L4 --> R1
+    L4 --> R2
+    L4 --> R3
+
+    style L0 fill:#1a2332,stroke:#58a6ff,color:#c9d1d9
+    style L1 fill:#1a2332,stroke:#7ee787,color:#c9d1d9
+    style L2 fill:#1a2332,stroke:#d2a8ff,color:#c9d1d9
+    style L3 fill:#1a2332,stroke:#f0883e,color:#c9d1d9
+    style L4 fill:#1a2332,stroke:#f778ba,color:#c9d1d9
+    style L5 fill:#1a2332,stroke:#e5534b,color:#c9d1d9
+</div>
+
+<h2>5. 前端组件树</h2>
+<div class="mermaid">
+graph TB
+    Main["App.vue → Vue Router"]
+
+    subgraph Stores["Pinia 状态管理"]
+        AppS["appStore<br/>站点配置 · 主题<br/>公开设置 · 自定义菜单"]
+        AuthS["authStore<br/>JWT · 用户信息<br/>管理员标识"]
+        SubS["subscriptionStore<br/>活跃订阅 · 轮询"]
+        PayS["paymentStore<br/>支付状态"]
+        OnboardS["onboardingStore<br/>首次引导"]
+        AnnS["announcementStore<br/>公告"]
+    end
+
+    subgraph Layout["布局组件"]
+        Sidebar["Sidebar · Navbar"]
+        Footer["Footer"]
+    end
+
+    subgraph PublicPages["公开页面"]
+        Home["HomeView<br/>落地页"]
+        KeyUsage["KeyUsageView<br/>API Key 用量查询"]
+        SetupWizard["SetupWizardView<br/>首次运行引导"]
+    end
+
+    subgraph AuthPages2["认证页面"]
+        Login["LoginView<br/>邮箱/密码登录"]
+        Register["RegisterView<br/>注册 · 验证码"]
+        Forgot["ForgotPasswordView<br/>密码重置"]
+        OAuth["OAuth Callbacks<br/>LinuxDo · WeChat<br/>OIDC · 通用回调"]
+        TwoFA["2FA 验证"]
+    end
+
+    subgraph UserPages2["用户端页面"]
+        Dashboard["DashboardView<br/>用量仪表盘"]
+        Keys["KeysView<br/>API Key 管理"]
+        Usage["UsageView<br/>用量历史/分析"]
+        Profile["ProfileView<br/>个人设置 · 2FA"]
+        Redeem["RedeemView<br/>兑换码"]
+        Subscriptions["SubscriptionsView<br/>订阅管理"]
+        Affiliate["AffiliateView<br/>推广计划"]
+        ChannelStatus["ChannelStatusView<br/>渠道健康状态"]
+    end
+
+    subgraph PaymentPages["支付页面"]
+        PayPlan["PaymentView<br/>方案选择"]
+        QRCode["PaymentQRCodeView<br/>扫码支付"]
+        StripePay["StripePaymentView<br/>Stripe 结账"]
+        Orders["UserOrdersView<br/>订单历史"]
+        Result["PaymentResultView<br/>支付结果"]
+    end
+
+    subgraph AdminPages["管理端页面"]
+        ADashboard["AdminDashboard<br/>统计 · 趋势 · 排名"]
+        AUsers["Users · Groups<br/>Accounts · Proxies"]
+        AChannels["Channels · Monitors<br/>Templates · Pricing"]
+        AOrders["Payment · Orders<br/>Plans · Providers"]
+        AOps["Ops Dashboard<br/>实时监控 · 告警<br/>错误 · 延迟 · 吞吐"]
+        ASettings["Settings · Backups<br/>Data Management<br/>System · TLS"]
+    end
+
+    Main --> Stores
+    Main --> Layout
+    Main --> PublicPages
+    Main --> AuthPages2
+    Main --> UserPages2
+    Main --> PaymentPages
+    Main --> AdminPages
+
+    style Stores fill:#1a2332,stroke:#f0883e,color:#c9d1d9
+    style PublicPages fill:#1a2332,stroke:#58a6ff,color:#c9d1d9
+    style AuthPages2 fill:#1a2332,stroke:#d2a8ff,color:#c9d1d9
+    style UserPages2 fill:#1a2332,stroke:#3fb950,color:#c9d1d9
+    style PaymentPages fill:#1a2332,stroke:#e5534b,color:#c9d1d9
+    style AdminPages fill:#1a2332,stroke:#f778ba,color:#c9d1d9
+</div>
+
+<h2>6. 账户调度与故障转移</h2>
+<div class="mermaid">
+graph TB
+    subgraph Request["请求入口"]
+        REQ["POST /v1/messages<br/>x-api-key + model"]
+    end
+
+    subgraph PreFlight["预处理"]
+        APIKEY["API Key 解析<br/>→ user · group · subscription"]
+        BILLING["计费检查<br/>余额 / 订阅 / 配额<br/>+ 熔断器状态"]
+        CONCUR["并发控制<br/>等待队列<br/>用户槽位获取"]
+    end
+
+    subgraph StickySession["粘性会话"]
+        HASH["Session Hash 生成<br/>client_ip + user_agent + api_key"]
+        LOOKUP["Redis 查询<br/>hash → account_id"]
+        BOUND{"已绑定?"}
+    end
+
+    subgraph Scheduler["账户调度器"]
+        direction TB
+        CANDIDATES["候选账户列表<br/>按 group 过滤<br/>模型可用性过滤"]
+        LOAD["负载感知排序<br/>当前并发数<br/>RPM 使用率<br/>历史延迟"]
+        SELECT["选择最优账户<br/>+ 槽位获取"]
+        QUEUE["OAuth 消息队列<br/>串行/限速模式"]
+    end
+
+    subgraph Failover["故障转移循环"]
+        FORWARD["请求转发"]
+        RESULT{"结果?"}
+        SUCCESS["成功 ✓<br/>保存粘性绑定<br/>RPM +1 · 用量记录"]
+        RETRY["失败 ✗<br/>标记账户临时不可用<br/>切换下一候选"]
+        EXHAUSTED["所有账户已耗尽<br/>返回 503"]
+    end
+
+    REQ --> APIKEY
+    APIKEY --> BILLING
+    BILLING --> CONCUR
+    CONCUR --> HASH
+    HASH --> LOOKUP
+    LOOKUP --> BOUND
+    BOUND -->|是| CANDIDATES
+    BOUND -->|否| CANDIDATES
+
+    CANDIDATES --> LOAD
+    LOAD --> SELECT
+    SELECT --> QUEUE
+    QUEUE --> FORWARD
+    FORWARD --> RESULT
+    RESULT -->|成功| SUCCESS
+    RESULT -->|失败| RETRY
+    RETRY -->|还有候选| SELECT
+    RETRY -->|无候选| EXHAUSTED
+
+    style PreFlight fill:#1a2332,stroke:#58a6ff,color:#c9d1d9
+    style StickySession fill:#1a2332,stroke:#d2a8ff,color:#c9d1d9
+    style Scheduler fill:#1a2332,stroke:#f0883e,color:#c9d1d9
+    style Failover fill:#1a2332,stroke:#e5534b,color:#c9d1d9
+</div>
+
+<h2>7. 项目规模速览</h2>
+<div class="mermaid">
+graph LR
+    subgraph Scale["Sub2API 项目规模"]
+        direction TB
+
+        subgraph BackendScale["Go Backend — backend/"]
+            B1["cmd/ 入口 + Wire DI"]
+            B2["internal/handler/ 40+ 控制器"]
+            B3["internal/service/ 250+ 业务文件"]
+            B4["internal/repository/ 70+ 数据访问"]
+            B5["internal/payment/ 4 支付渠道"]
+            B6["ent/schema/ 40+ 实体定义"]
+            B7["migrations/ 130+ SQL 迁移"]
+        end
+
+        subgraph FrontendScale["Vue Frontend — frontend/"]
+            F1["8 个 Pinia Stores"]
+            F2["40+ 页面视图"]
+            F3["30+ 共享组件"]
+            F4["vue-i18n 三语 (中/英/日)"]
+            F5["Chart.js 数据可视化"]
+        end
+
+        subgraph APIScale["API 规模"]
+            A1["40+ 公开/认证端点"]
+            A2["30+ 网关代理端点"]
+            A3["200+ 管理端点"]
+            A4["20+ OAuth 流程端点"]
+        end
+
+        subgraph InfraScale["基础设施"]
+            I1["Docker Compose × 3 变体"]
+            I2["一键安装脚本"]
+            I3["systemd 服务定义"]
+            I4["GoReleaser CI/CD"]
+            I5["Caddy 反向代理"]
+        end
+    end
+
+    BackendScale --> APIScale
+    FrontendScale --> APIScale
+    APIScale --> InfraScale
+
+    style BackendScale fill:#1a2332,stroke:#3fb950,color:#c9d1d9
+    style FrontendScale fill:#1a2332,stroke:#58a6ff,color:#c9d1d9
+    style APIScale fill:#1a2332,stroke:#d2a8ff,color:#c9d1d9
+    style InfraScale fill:#1a2332,stroke:#f0883e,color:#c9d1d9
+</div>
+
+<script>mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose' });</script>
+</body>
+</html>
