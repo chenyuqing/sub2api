@@ -16,7 +16,7 @@ This directory contains files for deploying Sub2API on Linux servers.
 | `docker-compose.yml` | Docker Compose configuration (named volumes) |
 | `docker-compose.local.yml` | Docker Compose configuration (local directories, easy migration) |
 | `docker-deploy.sh` | **One-click Docker deployment script (recommended)** |
-| `start.sh` / `stop.sh` / `status.sh` | One-click process control scripts with auto-detection |
+| `start.sh` / `stop.sh` / `restart.sh` / `status.sh` | One-click process control scripts with auto-detection |
 | `.env.example` | Docker environment variables template |
 | `DOCKER.md` | Docker Hub documentation |
 | `install.sh` | One-click binary installation script |
@@ -164,6 +164,7 @@ From the repository root, you can use the thin control wrappers:
 ```bash
 ./start.sh
 ./stop.sh
+./restart.sh
 ./status.sh
 ```
 

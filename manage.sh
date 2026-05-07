@@ -11,7 +11,7 @@ SYSTEMD_SERVICE="sub2api.service"
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") <start|stop|status>
+Usage: $(basename "$0") <start|stop|restart|status>
 
 Auto-detects the active deployment backend in this order:
   1. macOS launchd
@@ -116,10 +116,19 @@ launchd_start() {
   target="${scope}/${LAUNCHD_LABEL}"
 
   if launchctl print "$target" >/dev/null 2>&1; then
-    run_privileged launchctl kickstart -k "$target"
+    if [ "$scope" = "system" ]; then
+      run_privileged launchctl kickstart -k "$target"
+    else
+      launchctl kickstart -k "$target"
+    fi
   else
-    run_privileged launchctl bootstrap "$scope" "$plist" >/dev/null 2>&1 || true
-    run_privileged launchctl kickstart -k "$target"
+    if [ "$scope" = "system" ]; then
+      run_privileged launchctl bootstrap "$scope" "$plist" >/dev/null 2>&1 || true
+      run_privileged launchctl kickstart -k "$target"
+    else
+      launchctl bootstrap "$scope" "$plist" >/dev/null 2>&1 || true
+      launchctl kickstart -k "$target"
+    fi
   fi
 }
 
@@ -131,14 +140,18 @@ launchd_stop() {
     exit 1
   }
   target="${scope}/${LAUNCHD_LABEL}"
-  run_privileged launchctl bootout "$scope" "$plist" >/dev/null 2>&1 || run_privileged launchctl bootout "$target" >/dev/null 2>&1 || true
+  if [ "$scope" = "system" ]; then
+    run_privileged launchctl bootout "$scope" "$plist" >/dev/null 2>&1 || run_privileged launchctl bootout "$target" >/dev/null 2>&1 || true
+  else
+    launchctl bootout "$scope" "$plist" >/dev/null 2>&1 || launchctl bootout "$target" >/dev/null 2>&1 || true
+  fi
 }
 
 launchd_status() {
   local scope target
   scope="$(launchd_scope)"
   target="${scope}/${LAUNCHD_LABEL}"
-  if run_privileged launchctl print "$target" >/dev/null 2>&1; then
+  if launchctl print "$target" >/dev/null 2>&1; then
     log "launchd: running ($target)"
     return 0
   fi
@@ -164,6 +177,10 @@ systemd_status() {
   return 3
 }
 
+systemd_restart() {
+  run_privileged systemctl restart "$SYSTEMD_SERVICE"
+}
+
 compose_start() {
   compose up -d
 }
@@ -174,6 +191,10 @@ compose_stop() {
 
 compose_status() {
   compose ps
+}
+
+compose_restart() {
+  compose restart
 }
 
 main() {
@@ -206,6 +227,17 @@ main() {
         launchd) launchd_stop ;;
         systemd) systemd_stop ;;
         compose) compose_stop ;;
+      esac
+      ;;
+    restart)
+      log "Using backend: $backend"
+      case "$backend" in
+        launchd)
+          launchd_stop
+          launchd_start
+          ;;
+        systemd) systemd_restart ;;
+        compose) compose_restart ;;
       esac
       ;;
     status)
