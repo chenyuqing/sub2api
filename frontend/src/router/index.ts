@@ -22,7 +22,9 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/setup/SetupWizardView.vue'),
     meta: {
       requiresAuth: false,
-      title: 'Setup'
+      title: 'Setup',
+      titleKey: 'setup.title',
+      descriptionKey: 'setup.description'
     }
   },
 
@@ -33,7 +35,8 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/HomeView.vue'),
     meta: {
       requiresAuth: false,
-      title: 'Home'
+      title: 'Home',
+      titleKey: 'home.title'
     }
   },
   {
@@ -62,7 +65,8 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/auth/EmailVerifyView.vue'),
     meta: {
       requiresAuth: false,
-      title: 'Verify Email'
+      title: 'Verify Email',
+      titleKey: 'auth.emailVerifyPageTitle'
     }
   },
   {
@@ -131,7 +135,8 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/auth/ResetPasswordView.vue'),
     meta: {
       requiresAuth: false,
-      title: 'Reset Password'
+      title: 'Reset Password',
+      titleKey: 'auth.resetPasswordTitle'
     }
   },
   {
@@ -141,6 +146,8 @@ const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: false,
       title: 'Key Usage',
+      titleKey: 'keyUsage.title',
+      descriptionKey: 'keyUsage.subtitle'
     }
   },
 
@@ -207,6 +214,18 @@ const routes: RouteRecordRaw[] = [
       title: 'Affiliate',
       titleKey: 'affiliate.title',
       descriptionKey: 'affiliate.description'
+    }
+  },
+  {
+    path: '/feedbacks',
+    name: 'Feedbacks',
+    component: () => import('@/views/user/FeedbacksView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Feedbacks',
+      titleKey: 'nav.feedbacks',
+      descriptionKey: 'nav.feedbacksDescription'
     }
   },
   {

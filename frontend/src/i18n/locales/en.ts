@@ -1,11 +1,14 @@
 export default {
   // Home Page
   home: {
+    title: 'Home',
     viewOnGithub: 'View on GitHub',
     viewDocs: 'View Documentation',
     docs: 'Docs',
     switchToLight: 'Switch to Light Mode',
     switchToDark: 'Switch to Dark Mode',
+    brandName: 'xLai Coding',
+    siteSubtitle: 'One-click GPT access, happy coding!',
     dashboard: 'Dashboard',
     login: 'Login',
     getStarted: 'Get Started',
@@ -296,6 +299,7 @@ export default {
     copyFailed: 'Failed to copy',
     verifying: 'Verifying...',
     processing: 'Processing...',
+    pending: 'Pending',
     contactSupport: 'Contact Support',
     add: 'Add',
     invalidEmail: 'Please enter a valid email address',
@@ -365,7 +369,9 @@ export default {
     collapse: 'Collapse',
     expand: 'Expand',
     logout: 'Logout',
+    docsCenter: 'Docs Center',
     github: 'GitHub',
+    online: 'Online',
     mySubscriptions: 'My Subscriptions',
     buySubscription: 'Recharge / Subscription',
     docs: 'Docs',
@@ -378,6 +384,9 @@ export default {
     channelPricing: 'Channel Pricing',
     channelMonitor: 'Channel Monitor',
     channelStatus: 'Channel Status',
+    serviceStatus: 'Service Status',
+    feedbacks: 'Feedbacks',
+    feedbacksDescription: 'Shows your submitted support tickets and their progress.',
   },
 
   // Auth
@@ -544,6 +553,7 @@ export default {
     rememberedPassword: 'Remembered your password?',
     // Reset password
     resetPasswordTitle: 'Set New Password',
+    emailVerifyPageTitle: 'Verify Email',
     resetPasswordHint: 'Enter your new password below.',
     newPassword: 'New Password',
     newPasswordPlaceholder: 'Enter your new password',
@@ -605,7 +615,44 @@ export default {
     viewUsage: 'View Usage',
     checkDetailedLogs: 'Check detailed usage logs',
     redeemCode: 'Redeem Code',
-    addBalanceWithCode: 'Add balance with a code'
+    addBalanceWithCode: 'Add balance with a code',
+    userConsole: 'User Console',
+    balanceWarningKicker: 'Balance Warning',
+    balanceWarningTitle: 'Balance {balance}, please recharge soon',
+    balanceWarningDescription: 'Low-balance threshold is {threshold}. Long-running jobs may stop if funds run out.',
+    goToRedeem: 'Go to Redeem',
+    balanceHint: 'Current user balance',
+    todayTokensHint: 'Real token usage today',
+    totalCostHint: 'Actual GPT/Codex charges',
+    activeKeysHint: 'Isolated per user',
+    quickstartTitle: 'Copy the config into your dev tool',
+    serviceStatus: 'Service Status',
+    servicePayment: 'Payment Enabled',
+    serviceBalanceNotify: 'Balance Alerts',
+    serviceChannelMonitor: 'Channel Monitoring',
+    loadFailed: 'Dashboard failed to load',
+    tableTime: 'Time',
+    tableModel: 'Model',
+    tableTokens: 'Token',
+    tableCost: 'Cost',
+    tableStatus: 'Status',
+    inviteBonusTitle: 'Invite Rewards',
+    totalRewards: 'Total Rewards',
+    inviteCode: 'Invite Code',
+    availableQuota: 'Available Quota',
+    teamTitle: 'Team Workspace',
+    workspace: 'Workspace',
+    personalWorkspace: 'Personal workspace',
+    seat: 'Seat',
+    role: 'Role',
+    teamNote: 'Team members, multi-key groups, and member limits will sync after the backend interfaces are connected.',
+    alertsTitle: 'Alert Subscriptions',
+    notifyEmail: 'Notification Email',
+    balanceThreshold: 'Balance Threshold',
+    balanceLowReminder: 'Alert when balance falls below threshold',
+    serviceAlert: 'Alert on service or account-pool issues',
+    alertsNote: 'Alert preferences are stored locally first; email delivery will be wired to the backend notification templates later.',
+    concurrent: 'Concurrency'
   },
 
   // Groups (shared)
@@ -717,6 +764,12 @@ export default {
     customKeyTooShort: 'Custom key must be at least 16 characters',
     customKeyInvalidChars: 'Custom key can only contain letters, numbers, underscores, and hyphens',
     customKeyRequired: 'Please enter a custom key',
+    createHint: 'Create your first API key to get started. The full key will only be shown once after creation.',
+    balanceWarningKicker: 'Balance Warning',
+    balanceWarningTitle: 'Balance {balance}, please recharge soon',
+    balanceWarningDescription: 'Low-balance threshold is {threshold}. Long-running jobs may stop if funds run out.',
+    goToRedeem: 'Go to Redeem',
+    expirationDate: 'Expiration Date',
     ipRestriction: 'IP Restriction',
     ipWhitelist: 'IP Whitelist',
     ipWhitelistPlaceholder: '192.168.1.100\n10.0.0.0/8',
@@ -764,7 +817,6 @@ export default {
     expiresInDays: '{days} days',
     extendDays: '+{days} days',
     customDate: 'Custom',
-    expirationDate: 'Expiration Date',
     expirationDateHint: 'Select when this API key should expire.',
     currentExpiration: 'Current expiration',
     expiresAt: 'Expires',
@@ -857,7 +909,17 @@ export default {
     exportExcelSuccess: 'Usage data exported successfully (Excel format)',
     exportExcelFailed: 'Failed to export usage data',
     imageUnit: ' images',
-    userAgent: 'User-Agent'
+    userAgent: 'User-Agent',
+    recent7Days: 'Last 7 Days',
+    todayTokensLabel: 'Today Tokens',
+    totalCostLabel: 'Total Cost',
+    activeKeysLabel: 'Active Keys',
+    noTrendData: 'No 7-day trend data',
+    callDetails: 'Call Details',
+    balanceWarningKicker: 'Balance Warning',
+    balanceWarningTitle: 'Balance {balance}, please recharge soon',
+    balanceWarningDescription: 'Low-balance threshold is {threshold}. Long-running jobs may stop if funds run out.',
+    goToRedeem: 'Go to Redeem'
   },
 
   // Shared keys for channel monitor (admin + user views)
@@ -1062,6 +1124,15 @@ export default {
     pleaseEnterCode: 'Please enter a redeem code'
   },
 
+  // Feedbacks
+  feedbacks: {
+    kicker: 'Support Tickets',
+    title: 'Support Tickets',
+    description: 'Your submitted support tickets and their progress will appear here.',
+    emptyTitle: 'No tickets yet',
+    emptyDescription: 'If you need help, contact an administrator or submit a request through an existing support channel.'
+  },
+
   // Profile
   profile: {
     title: 'Profile Settings',
@@ -1103,6 +1174,23 @@ export default {
     passwordTooShort: 'Password must be at least 8 characters long',
     passwordChangeSuccess: 'Password changed successfully',
     passwordChangeFailed: 'Failed to change password',
+    loginMethod: 'Login Method',
+    loginMethodPasswordEmail: 'Password + Email code',
+    loginMethodThirdParty: 'Third-party login',
+    logoutAllSessions: 'Sign out all sessions',
+    logoutAllSessionsConfirm: 'Sign out this account on all devices?',
+    logoutAllSessionsSuccess: 'Signed out from all sessions. Please sign in again.',
+    logoutAllSessionsFailed: 'Failed to sign out sessions',
+    logoutAllSessionsHint: 'Clicking will sign out this account from every device.',
+    location: 'Location',
+    currentBrowser: 'Current browser',
+    localMachine: 'Local machine',
+    lastActive: 'Last Active',
+    lowRisk: 'Low',
+    balanceWarningKicker: 'Balance Warning',
+    balanceWarningTitle: 'Balance {balance}, please recharge soon',
+    balanceWarningDescription: 'Low-balance threshold is {threshold}. Long-running jobs may stop if funds run out.',
+    goToRedeem: 'Go to Redeem',
     // TOTP 2FA
     totp: {
       title: 'Two-Factor Authentication (2FA)',

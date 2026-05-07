@@ -1,54 +1,187 @@
 <template>
   <AppLayout>
-    <TablePageLayout>
-      <template #filters>
-        <div class="flex flex-col gap-3">
-          <div class="flex flex-wrap items-center gap-3">
-            <SearchInput
-              v-model="filterSearch"
-              :placeholder="t('keys.searchPlaceholder')"
-              class="w-full sm:w-64"
-              @search="onFilterChange"
-            />
-            <Select
-              :model-value="filterGroupId"
-              class="w-40"
-              :options="groupFilterOptions"
-              @update:model-value="onGroupFilterChange"
-            />
-            <Select
-              :model-value="filterStatus"
-              class="w-40"
-              :options="statusFilterOptions"
-              @update:model-value="onStatusFilterChange"
-            />
+    <div class="mx-auto flex w-full max-w-[1240px] flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+      <section
+        v-if="showBalanceWarning"
+        class="rounded-[28px] border border-[#f1c4cf] bg-gradient-to-br from-[#fff4f3] via-white to-[#fff7fb] px-4 py-4 shadow-[0_1px_0_rgba(255,255,255,0.72),0_16px_42px_rgba(235,168,189,0.14)] sm:px-5"
+      >
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div class="space-y-2">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8d74e6]">
+              {{ t('keys.balanceWarningKicker') }}
+            </p>
+            <h2 class="text-lg font-semibold tracking-[-0.04em] text-[#3a2f39] sm:text-xl">
+              {{ t('keys.balanceWarningTitle', { balance: formatCurrency(balance) }) }}
+            </h2>
+            <p class="max-w-3xl text-sm leading-6 text-[#776974]">
+              {{ t('keys.balanceWarningDescription', { threshold: formatCurrency(balanceThreshold) }) }}
+            </p>
           </div>
-          <EndpointPopover
-            v-if="publicSettings?.api_base_url || (publicSettings?.custom_endpoints?.length ?? 0) > 0"
-            :api-base-url="publicSettings?.api_base_url || ''"
-            :custom-endpoints="publicSettings?.custom_endpoints || []"
+          <RouterLink
+            to="/redeem"
+            class="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#ff5f92] to-[#9a69ff] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(255,95,146,0.24)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
+          >
+            {{ t('keys.goToRedeem') }}
+          </RouterLink>
+        </div>
+      </section>
+
+      <section class="rounded-[28px] border border-[#f0e2df] bg-[#fffaf4] px-4 py-4 shadow-[0_1px_0_rgba(255,255,255,0.8),0_18px_40px_rgba(226,194,186,0.12)] sm:px-5">
+        <div class="space-y-1">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8d74e6]">
+            {{ t('keys.createKey') }}
+          </p>
+          <h2 class="text-2xl font-semibold tracking-[-0.045em] text-[#241c2b]">
+            {{ t('keys.createKey') }}
+          </h2>
+        </div>
+
+        <form id="key-form" @submit.prevent="handleSubmit" class="mt-5 space-y-4">
+          <div>
+              <label class="input-label">{{ t('keys.groupLabel') }}</label>
+            <Select
+              v-model="formData.group_id"
+              :options="groupOptions"
+              :placeholder="t('keys.selectGroup')"
+              :searchable="true"
+              :search-placeholder="t('keys.searchGroup')"
+              data-tour="key-form-group"
+            >
+              <template #selected="{ option }">
+                <GroupBadge
+                  v-if="option"
+                  :name="(option as unknown as GroupOption).label"
+                  :platform="(option as unknown as GroupOption).platform"
+                  :subscription-type="(option as unknown as GroupOption).subscriptionType"
+                  :rate-multiplier="(option as unknown as GroupOption).rate"
+                  :user-rate-multiplier="(option as unknown as GroupOption).userRate"
+                />
+                <span v-else class="text-gray-400">{{ t('keys.selectGroup') }}</span>
+              </template>
+              <template #option="{ option, selected }">
+                <GroupOptionItem
+                  :name="(option as unknown as GroupOption).label"
+                  :platform="(option as unknown as GroupOption).platform"
+                  :subscription-type="(option as unknown as GroupOption).subscriptionType"
+                  :rate-multiplier="(option as unknown as GroupOption).rate"
+                  :user-rate-multiplier="(option as unknown as GroupOption).userRate"
+                  :description="(option as unknown as GroupOption).description"
+                  :selected="selected"
+                />
+              </template>
+            </Select>
+          </div>
+
+          <div v-if="!showEditModal" class="space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="input-label mb-0">{{ t('keys.customKeyLabel') }}</label>
+              <button
+                type="button"
+                @click="formData.use_custom_key = !formData.use_custom_key"
+                :class="[
+                  'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                  formData.use_custom_key ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+                ]"
+              >
+                <span
+                  :class="[
+                    'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                    formData.use_custom_key ? 'translate-x-4' : 'translate-x-0'
+                  ]"
+                />
+              </button>
+            </div>
+            <div v-if="formData.use_custom_key">
+              <input
+                v-model="formData.custom_key"
+                type="text"
+                class="input"
+                :placeholder="t('keys.customKeyPlaceholder')"
+                :class="{ 'border-red-500 dark:border-red-500': customKeyError }"
+                data-tour="key-form-custom-key"
+              />
+              <p v-if="customKeyError" class="mt-1 text-sm text-red-500">{{ customKeyError }}</p>
+            </div>
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-[1.1fr_1.6fr_1fr]">
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-[#5c5560]">{{ t('keys.nameLabel') }}</label>
+              <input
+                v-model="formData.name"
+                type="text"
+                required
+                class="input"
+                :placeholder="t('keys.namePlaceholder')"
+                data-tour="key-form-name"
+              />
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-[#5c5560]">{{ t('keys.quotaAmount') }}</label>
+              <input
+                v-model.number="formData.quota"
+                type="number"
+                step="0.01"
+                min="0"
+                class="input"
+                :placeholder="t('keys.quotaAmountPlaceholder')"
+              />
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-[#5c5560]">{{ t('keys.expirationDate') }}</label>
+              <input
+                v-model="formData.expiration_date"
+                type="date"
+                class="input"
+              />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <p class="max-w-3xl text-sm leading-6 text-[#766d75]">
+              {{ t('keys.createFirstKey') }}
+            </p>
+            <button
+              type="submit"
+              :disabled="submitting || !formData.group_id"
+              class="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#ff5f92] to-[#9a69ff] px-8 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(255,95,146,0.24)] transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+              data-tour="key-form-submit"
+            >
+              {{ submitting ? t('keys.saving') : t('keys.createKey') }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+          <SearchInput
+            v-model="filterSearch"
+            :placeholder="t('keys.searchPlaceholder')"
+            class="w-full sm:max-w-[420px]"
+            @search="onFilterChange"
+          />
+          <Select
+            :model-value="filterStatus"
+            class="w-full sm:w-44"
+            :options="statusFilterOptions"
+            @update:model-value="onStatusFilterChange"
           />
         </div>
-      </template>
-
-      <template #actions>
-        <div class="flex justify-end gap-3">
         <button
           @click="loadApiKeys"
           :disabled="loading"
-          class="btn btn-secondary"
+          class="inline-flex items-center gap-2 rounded-full border border-[#e6d8df] bg-white px-4 py-2 text-sm font-medium text-[#4d4650] shadow-[0_1px_0_rgba(255,255,255,0.9)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#fdf8fb] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
           :title="t('common.refresh')"
         >
           <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
+          <span>{{ t('common.refresh') }}</span>
         </button>
-        <button @click="showCreateModal = true" class="btn btn-primary" data-tour="keys-create-btn">
-          <Icon name="plus" size="md" class="mr-2" />
-          {{ t('keys.createKey') }}
-        </button>
-      </div>
-      </template>
+      </section>
 
-      <template #table>
+      <section class="overflow-hidden rounded-[28px] border border-[#efe0e8] bg-white/92 shadow-[0_16px_40px_rgba(210,172,191,0.12)]">
         <DataTable
           :columns="columns"
           :data="apiKeys"
@@ -362,32 +495,22 @@
           </template>
 
           <template #empty>
-            <EmptyState
-              :title="t('keys.noKeysYet')"
-              :description="t('keys.createFirstKey')"
-              :action-text="t('keys.createKey')"
-              @action="showCreateModal = true"
-            />
+            <div class="flex flex-col items-center justify-center px-6 py-14 text-center">
+              <p class="text-lg font-semibold text-[#2f2433]">{{ t('keys.noKeysYet') }}</p>
+              <p class="mt-2 max-w-md text-sm leading-6 text-[#7a6d78]">
+                {{ t('keys.createHint') }}
+              </p>
+            </div>
           </template>
         </DataTable>
-      </template>
+      </section>
 
-      <template #pagination>
-        <Pagination
-          v-if="pagination.total > 0"
-          :page="pagination.page"
-          :total="pagination.total"
-          :page-size="pagination.page_size"
-          @update:page="handlePageChange"
-          @update:pageSize="handlePageSizeChange"
-        />
-      </template>
-    </TablePageLayout>
+    </div>
 
     <!-- Create/Edit Modal -->
     <BaseDialog
-      :show="showCreateModal || showEditModal"
-      :title="showEditModal ? t('keys.editKey') : t('keys.createKey')"
+      :show="showEditModal"
+      :title="t('keys.editKey')"
       width="normal"
       @close="closeModals"
     >
@@ -872,13 +995,7 @@
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               ></path>
             </svg>
-            {{
-              submitting
-                ? t('keys.saving')
-                : showEditModal
-                  ? t('common.update')
-                  : t('common.create')
-            }}
+            {{ submitting ? t('keys.saving') : t('common.update') }}
           </button>
         </div>
       </template>
@@ -1047,25 +1164,22 @@
 <script setup lang="ts">
 	import { ref, computed, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
 	import { useI18n } from 'vue-i18n'
-	import { useAppStore } from '@/stores/app'
-	import { useOnboardingStore } from '@/stores/onboarding'
-	import { useClipboard } from '@/composables/useClipboard'
+import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
+import { useOnboardingStore } from '@/stores/onboarding'
+import { useClipboard } from '@/composables/useClipboard'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 
 const { t } = useI18n()
 import { keysAPI, authAPI, usageAPI, userGroupsAPI } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
-import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 	import DataTable from '@/components/common/DataTable.vue'
-	import Pagination from '@/components/common/Pagination.vue'
 	import BaseDialog from '@/components/common/BaseDialog.vue'
 	import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
-	import EmptyState from '@/components/common/EmptyState.vue'
 	import Select from '@/components/common/Select.vue'
 	import SearchInput from '@/components/common/SearchInput.vue'
 	import Icon from '@/components/icons/Icon.vue'
 	import UseKeyModal from '@/components/keys/UseKeyModal.vue'
-	import EndpointPopover from '@/components/keys/EndpointPopover.vue'
 	import GroupBadge from '@/components/common/GroupBadge.vue'
 	import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
 	import type { ApiKey, Group, PublicSettings, SubscriptionType, GroupPlatform } from '@/types'
@@ -1092,6 +1206,7 @@ interface GroupOption {
 }
 
 const appStore = useAppStore()
+const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 const { copyToClipboard: clipboardCopy } = useClipboard()
 
@@ -1117,6 +1232,14 @@ let resetTimer: ReturnType<typeof setInterval> | null = null
 const usageStats = ref<Record<string, BatchApiKeyUsageStats>>({})
 const userGroupRates = ref<Record<number, number>>({})
 
+const balance = computed(() => authStore.user?.balance ?? 0)
+const balanceThreshold = computed(() => authStore.user?.balance_notify_threshold ?? 10)
+const showBalanceWarning = computed(() => authStore.user != null && balance.value <= balanceThreshold.value)
+
+function formatCurrency(value: number): string {
+  return value.toFixed(2)
+}
+
 const pagination = ref({
   page: 1,
   page_size: getPersistedPageSize(),
@@ -1133,7 +1256,6 @@ const filterSearch = ref('')
 const filterStatus = ref('')
 const filterGroupId = ref<string | number>('')
 
-const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteDialog = ref(false)
 const showResetQuotaDialog = ref(false)
@@ -1207,13 +1329,6 @@ const statusOptions = computed(() => [
   { value: 'inactive', label: t('common.inactive') }
 ])
 
-// Filter dropdown options
-const groupFilterOptions = computed(() => [
-  { value: '', label: t('keys.allGroups') },
-  { value: 0, label: t('keys.noGroup') },
-  ...groups.value.map((g) => ({ value: g.id, label: g.name }))
-])
-
 const statusFilterOptions = computed(() => [
   { value: '', label: t('keys.allStatus') },
   { value: 'active', label: t('keys.status.active') },
@@ -1225,11 +1340,6 @@ const statusFilterOptions = computed(() => [
 const onFilterChange = () => {
   pagination.value.page = 1
   loadApiKeys()
-}
-
-const onGroupFilterChange = (value: string | number | boolean | null) => {
-  filterGroupId.value = value as string | number
-  onFilterChange()
 }
 
 const onStatusFilterChange = (value: string | number | boolean | null) => {
@@ -1334,6 +1444,9 @@ const loadApiKeys = async () => {
 const loadGroups = async () => {
   try {
     groups.value = await userGroupsAPI.getAvailable()
+    if (formData.value.group_id === null && groups.value.length > 0) {
+      formData.value.group_id = groups.value[0].id
+    }
   } catch (error) {
     console.error('Failed to load groups:', error)
   }
@@ -1363,17 +1476,6 @@ const openUseKeyModal = (key: ApiKey) => {
 const closeUseKeyModal = () => {
   showUseKeyModal.value = false
   selectedKey.value = null
-}
-
-const handlePageChange = (page: number) => {
-  pagination.value.page = page
-  loadApiKeys()
-}
-
-const handlePageSizeChange = (pageSize: number) => {
-  pagination.value.page_size = pageSize
-  pagination.value.page = 1
-  loadApiKeys()
 }
 
 const handleSort = (key: string, order: 'asc' | 'desc') => {
@@ -1601,7 +1703,6 @@ const handleDelete = async () => {
 }
 
 const closeModals = () => {
-  showCreateModal.value = false
   showEditModal.value = false
   selectedKey.value = null
   formData.value = {

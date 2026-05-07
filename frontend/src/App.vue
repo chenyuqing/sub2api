@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { onMounted, onBeforeUnmount, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Toast from '@/components/common/Toast.vue'
 import NavigationProgress from '@/components/common/NavigationProgress.vue'
 import { resolveDocumentTitle } from '@/router/title'
@@ -10,6 +11,7 @@ import { getSetupStatus } from '@/api/setup'
 
 const router = useRouter()
 const route = useRoute()
+const { locale } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const subscriptionStore = useSubscriptionStore()
@@ -46,6 +48,14 @@ watch(
     if (newLogo) {
       updateFavicon(newLogo)
     }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => [locale.value, appStore.siteName, route.meta.title, route.meta.titleKey] as const,
+  () => {
+    document.title = resolveDocumentTitle(route.meta.title, appStore.siteName, route.meta.titleKey as string)
   },
   { immediate: true }
 )
@@ -114,8 +124,6 @@ onMounted(async () => {
   // Load public settings into appStore (will be cached for other components)
   await appStore.fetchPublicSettings()
 
-  // Re-resolve document title now that siteName is available
-  document.title = resolveDocumentTitle(route.meta.title, appStore.siteName, route.meta.titleKey as string)
 })
 </script>
 

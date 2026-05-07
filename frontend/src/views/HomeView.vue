@@ -119,11 +119,11 @@
               <h1
                 class="text-4xl font-bold leading-none text-ink-950 dark:text-white md:text-5xl lg:text-6xl"
               >
-                {{ siteName }}
+                {{ t('home.brandName') }}
               </h1>
             </div>
             <p class="mb-8 text-lg text-ink-600 dark:text-dark-300 md:text-xl">
-              {{ siteSubtitle }}
+              {{ t('home.siteSubtitle') }}
             </p>
 
             <!-- CTA Button -->
@@ -319,7 +319,7 @@
         class="mx-auto flex max-w-6xl flex-col items-center justify-center gap-4 text-center sm:flex-row sm:text-left"
       >
         <p class="text-sm text-gray-500 dark:text-dark-400">
-          &copy; {{ currentYear }} {{ siteName }}. {{ t('home.footer.allRightsReserved') }}
+          &copy; {{ currentYear }} {{ t('home.brandName') }}. {{ t('home.footer.allRightsReserved') }}
         </p>
         <div class="flex items-center gap-4">
           <a
@@ -357,10 +357,7 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const appStore = useAppStore()
 
-// Site settings - directly from appStore (already initialized from injected config)
-const siteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || '象來Coding')
 const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
-const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'AI API Gateway Platform')
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 

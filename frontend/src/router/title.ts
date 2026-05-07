@@ -5,7 +5,17 @@ import { i18n } from '@/i18n'
  * 优先使用 titleKey 通过 i18n 翻译，fallback 到静态 routeTitle。
  */
 export function resolveDocumentTitle(routeTitle: unknown, siteName?: string, titleKey?: string): string {
-  const normalizedSiteName = typeof siteName === 'string' && siteName.trim() ? siteName.trim() : '象來Coding'
+  const locale = i18n.global.locale.value
+  const normalizedSiteName = (() => {
+    if (typeof siteName !== 'string' || !siteName.trim()) {
+      return locale.startsWith('en') ? 'xLai Coding' : '象來Coding'
+    }
+    const trimmed = siteName.trim()
+    if (trimmed === '象來Coding' || trimmed === 'xLai Coding') {
+      return locale.startsWith('en') ? 'xLai Coding' : '象來Coding'
+    }
+    return trimmed
+  })()
 
   if (typeof titleKey === 'string' && titleKey.trim()) {
     const translated = i18n.global.t(titleKey)

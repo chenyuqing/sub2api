@@ -1,11 +1,14 @@
 export default {
   // Home Page
   home: {
+    title: '首页',
     viewOnGithub: '在 GitHub 上查看',
     viewDocs: '查看文档',
     docs: '文档',
     switchToLight: '切换到浅色模式',
     switchToDark: '切换到深色模式',
+    brandName: '象來Coding',
+    siteSubtitle: '一键接入GPT，快乐coding！',
     dashboard: '控制台',
     login: '登录',
     getStarted: '立即开始',
@@ -296,6 +299,7 @@ export default {
     copyFailed: '复制失败',
     verifying: '验证中...',
     processing: '处理中...',
+    pending: '待处理',
     contactSupport: '联系客服',
     add: '添加',
     invalidEmail: '请输入有效的邮箱地址',
@@ -365,7 +369,9 @@ export default {
     collapse: '收起',
     expand: '展开',
     logout: '退出登录',
+    docsCenter: '文档中心',
     github: 'GitHub',
+    online: '在线',
     mySubscriptions: '我的订阅',
     buySubscription: '充值/订阅',
     docs: '文档',
@@ -378,6 +384,9 @@ export default {
     channelPricing: '渠道定价',
     channelMonitor: '渠道监控',
     channelStatus: '渠道状态',
+    serviceStatus: '服务状态',
+    feedbacks: '反馈工单',
+    feedbacksDescription: '这里会展示您提交的支持工单和处理进度。',
   },
 
   // Auth
@@ -543,6 +552,7 @@ export default {
     rememberedPassword: '想起密码了？',
     // 重置密码
     resetPasswordTitle: '设置新密码',
+    emailVerifyPageTitle: '验证邮箱',
     resetPasswordHint: '请在下方输入您的新密码。',
     newPassword: '新密码',
     newPasswordPlaceholder: '输入新密码',
@@ -604,7 +614,44 @@ export default {
     viewUsage: '查看使用记录',
     checkDetailedLogs: '查看详细的使用日志',
     redeemCode: '兑换码',
-    addBalanceWithCode: '使用兑换码充值'
+    addBalanceWithCode: '使用兑换码充值',
+    userConsole: '用户控制台',
+    balanceWarningKicker: '余额提醒',
+    balanceWarningTitle: '余额 {balance}，建议先补额',
+    balanceWarningDescription: '低余额阈值为 {threshold}。长任务可能因为余额不足中断。',
+    goToRedeem: '去兑换码',
+    balanceHint: '当前用户余额',
+    todayTokensHint: '今日真实 Token 消耗',
+    totalCostHint: '实际 GPT/Codex 扣费',
+    activeKeysHint: '按用户独立隔离',
+    quickstartTitle: '复制配置到你的开发工具',
+    serviceStatus: '服务状态',
+    servicePayment: '支付功能',
+    serviceBalanceNotify: '余额提醒',
+    serviceChannelMonitor: '渠道监控',
+    loadFailed: '仪表盘加载失败',
+    tableTime: '时间',
+    tableModel: '模型',
+    tableTokens: 'Token',
+    tableCost: '费用',
+    tableStatus: '状态',
+    inviteBonusTitle: '邀请奖励',
+    totalRewards: '累计奖励',
+    inviteCode: '邀请码',
+    availableQuota: '可用额度',
+    teamTitle: '团队工作区',
+    workspace: '工作区',
+    personalWorkspace: '个人工作区',
+    seat: '席位',
+    role: '角色',
+    teamNote: '团队成员、多 Key 分组和成员限额会在后端接口接入后同步。',
+    alertsTitle: '告警订阅',
+    notifyEmail: '通知邮箱',
+    balanceThreshold: '余额提醒阈值',
+    balanceLowReminder: '余额低于阈值时提醒',
+    serviceAlert: '服务异常或账号池异常时提醒',
+    alertsNote: '告警偏好会先保存在当前浏览器，邮件发送待后端通知模板接入。',
+    concurrent: '并发'
   },
 
   // Groups (shared)
@@ -720,6 +767,12 @@ export default {
     customKeyTooShort: '自定义密钥至少需要16个字符',
     customKeyInvalidChars: '自定义密钥只能包含字母、数字、下划线和连字符',
     customKeyRequired: '请输入自定义密钥',
+    createHint: '创建您的第一个 Key 后，完整值会在创建后只显示一次。',
+    balanceWarningKicker: '余额提醒',
+    balanceWarningTitle: '余额 {balance}，建议先补额',
+    balanceWarningDescription: '低余额阈值为 {threshold}。长任务可能因为余额不足中断。',
+    goToRedeem: '去兑换码',
+    expirationDate: '过期日期',
     ipRestriction: 'IP 限制',
     ipWhitelist: 'IP 白名单',
     ipWhitelistPlaceholder: '192.168.1.100\n10.0.0.0/8',
@@ -768,7 +821,6 @@ export default {
     expiresInDays: '{days} 天',
     extendDays: '+{days} 天',
     customDate: '自定义',
-    expirationDate: '过期时间',
     expirationDateHint: '选择此 API 密钥的过期时间。',
     currentExpiration: '当前过期时间',
     expiresAt: '过期时间',
@@ -861,7 +913,17 @@ export default {
     exportExcelSuccess: '使用数据导出成功（Excel格式）',
     exportExcelFailed: '使用数据导出失败',
     imageUnit: '张',
-    userAgent: 'User-Agent'
+    userAgent: 'User-Agent',
+    recent7Days: '最近 7 天',
+    todayTokensLabel: '今日 Token',
+    totalCostLabel: '累计费用',
+    activeKeysLabel: '活跃 Key',
+    noTrendData: '暂无 7 天趋势数据',
+    callDetails: '调用明细',
+    balanceWarningKicker: '余额提醒',
+    balanceWarningTitle: '余额 {balance}，建议先补额',
+    balanceWarningDescription: '低余额阈值为 {threshold}。长任务可能因为余额不足中断。',
+    goToRedeem: '去兑换码'
   },
 
   // Shared keys for channel monitor (admin + user views)
@@ -1066,6 +1128,15 @@ export default {
     pleaseEnterCode: '请输入兑换码'
   },
 
+  // Feedbacks
+  feedbacks: {
+    kicker: '反馈工单',
+    title: '反馈工单',
+    description: '这里会展示您提交的支持工单和处理进度。',
+    emptyTitle: '暂无工单',
+    emptyDescription: '如果需要帮助，请先联系管理员或通过现有支持渠道提交说明。'
+  },
+
   // Profile
   profile: {
     title: '个人设置',
@@ -1107,6 +1178,23 @@ export default {
     passwordTooShort: '密码至少需要 8 个字符',
     passwordChangeSuccess: '密码修改成功',
     passwordChangeFailed: '密码修改失败',
+    loginMethod: '登录方式',
+    loginMethodPasswordEmail: '密码 + 邮箱验证码',
+    loginMethodThirdParty: '第三方登录',
+    logoutAllSessions: '退出全部会话',
+    logoutAllSessionsConfirm: '将退出该账号在所有设备上的会话，是否继续？',
+    logoutAllSessionsSuccess: '已退出全部会话，请重新登录',
+    logoutAllSessionsFailed: '退出失败',
+    logoutAllSessionsHint: '点击会退出当前账号在所有设备上的会话。',
+    location: '位置',
+    currentBrowser: '当前浏览器',
+    localMachine: '本机',
+    lastActive: '最后活动',
+    lowRisk: '低',
+    balanceWarningKicker: '余额提醒',
+    balanceWarningTitle: '余额 {balance}，建议先补额',
+    balanceWarningDescription: '低余额阈值为 {threshold}。长任务可能因为余额不足中断。',
+    goToRedeem: '去兑换码',
     // TOTP 2FA
     totp: {
       title: '双因素认证 (2FA)',

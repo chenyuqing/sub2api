@@ -33,6 +33,13 @@
 
 Sub2API 是一个 AI API 网关平台，用于分发和管理 AI 产品订阅的 API 配额。用户通过平台生成的 API Key 调用上游 AI 服务，平台负责鉴权、计费、负载均衡和请求转发。
 
+## 当前前端说明
+
+- 首页和登录后的外壳品牌名会随语言切换：英文为 `xLai Coding`，中文为 `象來Coding`
+- 首页标语也已本地化：英文 `One-click GPT access, happy coding!`，中文 `一键接入GPT，快乐coding！`
+- 右上角语言切换会同步影响已登录后的侧边栏品牌标题
+- 当前对外展示的首页文案仅强调 OpenAI / GPT
+
 ## 核心功能
 
 - **多账号管理** - 支持多种上游账号类型（OAuth、API Key）

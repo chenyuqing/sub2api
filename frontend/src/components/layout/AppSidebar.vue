@@ -95,7 +95,7 @@
         <div v-if="!authStore.isSimpleMode" class="sidebar-section">
           <div class="sidebar-section-title" :class="{ 'sidebar-section-title-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
             <span class="sidebar-section-title-text" :class="{ 'sidebar-section-title-text-collapsed': sidebarCollapsed }">
-              {{ t('nav.myAccount') }}
+              {{ navLabel('我的账户', 'My Account') }}
             </span>
           </div>
 
@@ -139,17 +139,40 @@
 
     <!-- Bottom Section -->
     <div class="sidebar-footer mt-auto p-3">
+      <div class="mb-3 space-y-1.5">
+        <a
+          v-if="appStore.docUrl"
+          :href="appStore.docUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="sidebar-link w-full"
+          :class="{ 'sidebar-link-collapsed': sidebarCollapsed }"
+        >
+          <BookIcon class="h-5 w-5 flex-shrink-0" />
+          <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ navLabel('文档中心', 'Docs Center') }}</span>
+        </a>
+
+        <router-link
+          to="/monitor"
+          class="sidebar-link w-full"
+          :class="{ 'sidebar-link-collapsed': sidebarCollapsed }"
+        >
+          <SignalIcon class="h-5 w-5 flex-shrink-0" />
+          <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ navLabel('服务状态', 'Service Status') }}</span>
+        </router-link>
+      </div>
+
       <!-- Theme Toggle -->
       <button
         @click="toggleTheme"
         class="sidebar-link mb-2 w-full"
         :class="{ 'sidebar-link-collapsed': sidebarCollapsed }"
-        :title="sidebarCollapsed ? (isDark ? t('nav.lightMode') : t('nav.darkMode')) : undefined"
+        :title="sidebarCollapsed ? (isDark ? navLabel('浅色模式', 'Light Mode') : navLabel('深色模式', 'Dark Mode')) : undefined"
       >
         <SunIcon v-if="isDark" class="h-5 w-5 flex-shrink-0 text-pink-300" />
         <MoonIcon v-else class="h-5 w-5 flex-shrink-0" />
         <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{
-          isDark ? t('nav.lightMode') : t('nav.darkMode')
+          isDark ? navLabel('浅色模式', 'Light Mode') : navLabel('深色模式', 'Dark Mode')
         }}</span>
       </button>
 
@@ -158,11 +181,11 @@
         @click="toggleSidebar"
         class="sidebar-link w-full"
         :class="{ 'sidebar-link-collapsed': sidebarCollapsed }"
-        :title="sidebarCollapsed ? t('nav.expand') : t('nav.collapse')"
+        :title="sidebarCollapsed ? navLabel('展开', 'Expand') : navLabel('收起', 'Collapse')"
       >
         <ChevronDoubleLeftIcon v-if="!sidebarCollapsed" class="h-5 w-5 flex-shrink-0" />
         <ChevronDoubleRightIcon v-else class="h-5 w-5 flex-shrink-0" />
-        <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ t('nav.collapse') }}</span>
+        <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ navLabel('收起', 'Collapse') }}</span>
       </button>
     </div>
   </aside>
@@ -221,7 +244,7 @@ function applyFeatureFlags(items: NavItem[]): NavItem[] {
   return out
 }
 
-const { t } = useI18n()
+const { locale } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -238,10 +261,13 @@ const isDark = ref(document.documentElement.classList.contains('dark'))
 // Track which parent nav groups are expanded
 const expandedGroups = ref<Set<string>>(new Set())
 
-// Site settings from appStore (cached, no flicker)
-const siteName = computed(() => appStore.siteName)
+// Brand label should follow the active locale, not the backend site name.
+const siteName = computed(() => (locale.value.startsWith('en') ? 'xLai Coding' : '象來Coding'))
 const siteLogo = computed(() => appStore.siteLogo)
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
+const isChinese = computed(() => locale.value.startsWith('zh'))
+
+const navLabel = (zh: string, en: string) => (isChinese.value ? zh : en)
 
 // SVG Icon Components
 const DashboardIcon = {
@@ -314,6 +340,21 @@ const UserIcon = {
           'stroke-linecap': 'round',
           'stroke-linejoin': 'round',
           d: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z'
+        })
+      ]
+    )
+}
+
+const BookIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M19.5 3.75v16.5a.75.75 0 01-1.122.65L12 17.625l-6.378 3.275A.75.75 0 014.5 20.25V3.75A.75.75 0 015.25 3h13.5a.75.75 0 01.75.75z'
         })
       ]
     )
@@ -629,32 +670,25 @@ const ChevronDownIcon = {
 // yet. Admin-only flags (not in public settings) stay inline below.
 const flagChannelMonitor = makeSidebarFlag(FeatureFlags.channelMonitor)
 const flagPayment = makeSidebarFlag(FeatureFlags.payment)
-const flagAvailableChannels = makeSidebarFlag(FeatureFlags.availableChannels)
-const flagAffiliate = makeSidebarFlag(FeatureFlags.affiliate)
 const flagOpsMonitoring = () => adminSettingsStore.opsMonitoringEnabled
 const flagAdminPayment = () => adminSettingsStore.paymentEnabled
 
-// buildSelfNavItems 构造用户自己的导航项（用户端主菜单和管理员的"我的账户"子菜单共享这组声明）。
-// withDashboard=true 时包含仪表盘（用户端），false 时不含（管理员的个人区已经有独立仪表盘入口）。
-//
-// 条目顺序：密钥 → 用量 → 可用渠道 → 渠道状态 → 订阅/支付 → 兑换/资料。
-// 可用渠道紧挨渠道状态之上，让用户"先看自己能用什么、再看对应状态"。
+// buildSelfNavItems 构造用户端导航项。
+// BerryCode 的侧栏顺序是：仪表盘 → API Keys → 使用记录 → 余额充值 → 充值订单 → 反馈工单 → 兑换邀请码 → 个人资料。
+// 这里保留现有路由，但把文案和顺序对齐到参考站。
 function buildSelfNavItems(withDashboard: boolean): NavItem[] {
   const items: NavItem[] = []
   if (withDashboard) {
-    items.push({ path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon })
+    items.push({ path: '/dashboard', label: navLabel('仪表盘', 'Dashboard'), icon: DashboardIcon })
   }
   items.push(
-    { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
-    { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },
-    { path: '/available-channels', label: t('nav.availableChannels'), icon: ChannelIcon, hideInSimpleMode: true, featureFlag: flagAvailableChannels },
-    { path: '/monitor', label: t('nav.channelStatus'), icon: SignalIcon, featureFlag: flagChannelMonitor },
-    { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
-    { path: '/purchase', label: t('nav.buySubscription'), icon: RechargeSubscriptionIcon, hideInSimpleMode: true, featureFlag: flagPayment },
-    { path: '/orders', label: t('nav.myOrders'), icon: OrderListIcon, hideInSimpleMode: true, featureFlag: flagPayment },
-    { path: '/redeem', label: t('nav.redeem'), icon: GiftIcon, hideInSimpleMode: true },
-    { path: '/affiliate', label: t('nav.affiliate'), icon: UsersIcon, hideInSimpleMode: true, featureFlag: flagAffiliate },
-    { path: '/profile', label: t('nav.profile'), icon: UserIcon },
+    { path: '/keys', label: navLabel('API 密钥', 'API Keys'), icon: KeyIcon },
+    { path: '/usage', label: navLabel('使用记录', 'Usage'), icon: ChartIcon, hideInSimpleMode: true },
+    { path: '/purchase', label: navLabel('充值/订阅', 'Recharge / Subscription'), icon: RechargeSubscriptionIcon, hideInSimpleMode: true, featureFlag: flagPayment },
+    { path: '/orders', label: navLabel('我的订单', 'My Orders'), icon: OrderListIcon, hideInSimpleMode: true, featureFlag: flagPayment },
+    { path: '/feedbacks', label: navLabel('反馈工单', 'Feedbacks'), icon: TicketIcon, hideInSimpleMode: true },
+    { path: '/redeem', label: navLabel('兑换码', 'Redeem Codes'), icon: GiftIcon, hideInSimpleMode: true },
+    { path: '/profile', label: navLabel('个人资料', 'Profile'), icon: UserIcon },
     ...customMenuItemsForUser.value.map((item): NavItem => ({
       path: `/custom/${item.id}`,
       label: item.label,
@@ -672,12 +706,18 @@ function finalizeNav(items: NavItem[]): NavItem[] {
 }
 
 // User navigation items (for regular users)
-const userNavItems = computed((): NavItem[] => finalizeNav(buildSelfNavItems(true)))
+const userNavItems = computed((): NavItem[] => {
+  void locale.value
+  return finalizeNav(buildSelfNavItems(true))
+})
 
 // Personal navigation items (for admin's "My Account" section, without Dashboard).
 // Admins access 可用渠道 from this section just like regular users — there is no
 // separate admin entry, since the page is purely a user-facing view.
-const personalNavItems = computed((): NavItem[] => finalizeNav(buildSelfNavItems(false)))
+const personalNavItems = computed((): NavItem[] => {
+  void locale.value
+  return finalizeNav(buildSelfNavItems(false))
+})
 
 // Custom menu items filtered by visibility
 const customMenuItemsForUser = computed(() => {
@@ -695,42 +735,43 @@ const customMenuItemsForAdmin = computed(() => {
 
 // Admin navigation items
 const adminNavItems = computed((): NavItem[] => {
+  void locale.value
   const baseItems: NavItem[] = [
-    { path: '/admin/dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
-    { path: '/admin/ops', label: t('nav.ops'), icon: ChartIcon, featureFlag: flagOpsMonitoring },
-    { path: '/admin/users', label: t('nav.users'), icon: UsersIcon, hideInSimpleMode: true },
-    { path: '/admin/groups', label: t('nav.groups'), icon: FolderIcon, hideInSimpleMode: true },
+    { path: '/admin/dashboard', label: navLabel('仪表盘', 'Dashboard'), icon: DashboardIcon },
+    { path: '/admin/ops', label: navLabel('运维监控', 'Ops'), icon: ChartIcon, featureFlag: flagOpsMonitoring },
+    { path: '/admin/users', label: navLabel('用户管理', 'Users'), icon: UsersIcon, hideInSimpleMode: true },
+    { path: '/admin/groups', label: navLabel('分组管理', 'Groups'), icon: FolderIcon, hideInSimpleMode: true },
     {
       path: '/admin/channels',
-      label: t('nav.channelManagement'),
+      label: navLabel('渠道管理', 'Channels'),
       icon: ChannelIcon,
       hideInSimpleMode: true,
       expandOnly: true,
       children: [
-        { path: '/admin/channels/pricing', label: t('nav.channelPricing'), icon: PriceTagIcon },
-        { path: '/admin/channels/monitor', label: t('nav.channelMonitor'), icon: SignalIcon, featureFlag: flagChannelMonitor },
+        { path: '/admin/channels/pricing', label: navLabel('渠道定价', 'Channel Pricing'), icon: PriceTagIcon },
+        { path: '/admin/channels/monitor', label: navLabel('渠道监控', 'Channel Monitor'), icon: SignalIcon, featureFlag: flagChannelMonitor },
       ],
     },
-    { path: '/admin/subscriptions', label: t('nav.subscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
-    { path: '/admin/accounts', label: t('nav.accounts'), icon: GlobeIcon },
-    { path: '/admin/announcements', label: t('nav.announcements'), icon: BellIcon },
-    { path: '/admin/proxies', label: t('nav.proxies'), icon: ServerIcon },
-    { path: '/admin/redeem', label: t('nav.redeemCodes'), icon: TicketIcon, hideInSimpleMode: true },
-    { path: '/admin/promo-codes', label: t('nav.promoCodes'), icon: GiftIcon, hideInSimpleMode: true },
+    { path: '/admin/subscriptions', label: navLabel('订阅管理', 'Subscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
+    { path: '/admin/accounts', label: navLabel('账号管理', 'Accounts'), icon: GlobeIcon },
+    { path: '/admin/announcements', label: navLabel('公告', 'Announcements'), icon: BellIcon },
+    { path: '/admin/proxies', label: navLabel('IP管理', 'Proxies'), icon: ServerIcon },
+    { path: '/admin/redeem', label: navLabel('兑换码', 'Redeem Codes'), icon: TicketIcon, hideInSimpleMode: true },
+    { path: '/admin/promo-codes', label: navLabel('优惠码', 'Promo Codes'), icon: GiftIcon, hideInSimpleMode: true },
     {
       path: '/admin/orders',
-      label: t('nav.orderManagement'),
+      label: navLabel('订单管理', 'Orders'),
       icon: OrderIcon,
       hideInSimpleMode: true,
       expandOnly: true,
       featureFlag: flagAdminPayment,
       children: [
-        { path: '/admin/orders/dashboard', label: t('nav.paymentDashboard'), icon: ChartIcon },
-        { path: '/admin/orders', label: t('nav.orderManagement'), icon: OrderIcon },
-        { path: '/admin/orders/plans', label: t('nav.paymentPlans'), icon: CreditCardIcon },
+        { path: '/admin/orders/dashboard', label: navLabel('支付概览', 'Payment Dashboard'), icon: ChartIcon },
+        { path: '/admin/orders', label: navLabel('订单管理', 'Orders'), icon: OrderIcon },
+        { path: '/admin/orders/plans', label: navLabel('订阅套餐', 'Plans'), icon: CreditCardIcon },
       ],
     },
-    { path: '/admin/usage', label: t('nav.usage'), icon: ChartIcon }
+    { path: '/admin/usage', label: navLabel('使用记录', 'Usage'), icon: ChartIcon }
   ]
 
   const visible = applyFeatureFlags(baseItems)
@@ -738,15 +779,15 @@ const adminNavItems = computed((): NavItem[] => {
   // 简单模式下，在系统设置前插入 API密钥
   if (authStore.isSimpleMode) {
     const filtered = visible.filter(item => !item.hideInSimpleMode)
-    filtered.push({ path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon })
-    filtered.push({ path: '/admin/settings', label: t('nav.settings'), icon: CogIcon })
+    filtered.push({ path: '/keys', label: navLabel('API 密钥', 'API Keys'), icon: KeyIcon })
+    filtered.push({ path: '/admin/settings', label: navLabel('系统设置', 'Settings'), icon: CogIcon })
     for (const cm of customMenuItemsForAdmin.value) {
       filtered.push({ path: `/custom/${cm.id}`, label: cm.label, icon: null, iconSvg: cm.icon_svg })
     }
     return filtered
   }
 
-  visible.push({ path: '/admin/settings', label: t('nav.settings'), icon: CogIcon })
+  visible.push({ path: '/admin/settings', label: navLabel('系统设置', 'Settings'), icon: CogIcon })
   for (const cm of customMenuItemsForAdmin.value) {
     visible.push({ path: `/custom/${cm.id}`, label: cm.label, icon: null, iconSvg: cm.icon_svg })
   }

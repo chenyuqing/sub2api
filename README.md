@@ -34,6 +34,13 @@ Demo credentials (shared demo environment; **not** created automatically for sel
 
 Sub2API is an AI API gateway platform designed to distribute and manage API quotas from AI product subscriptions. Users can access upstream AI services through platform-generated API Keys, while the platform handles authentication, billing, load balancing, and request forwarding.
 
+## Current UI Notes
+
+- The public homepage and logged-in shell now use locale-aware branding: `xLai Coding` in English and `象來Coding` in Chinese.
+- The homepage hero subtitle is also localized: `One-click GPT access, happy coding!` / `一键接入GPT，快乐coding！`
+- The top-right language switch affects the visible shell, including the sidebar brand title after login.
+- The public-facing demo UI currently highlights OpenAI / GPT only on the landing page.
+
 ## Features
 
 - **Multi-Account Management** - Support multiple upstream account types (OAuth, API Key)
