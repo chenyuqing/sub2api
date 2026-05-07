@@ -4,14 +4,76 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"testing"
 	"time"
 
+	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
+
+type refundAuthCacheInvalidatorStub struct {
+	userIDs []int64
+}
+
+func (s *refundAuthCacheInvalidatorStub) InvalidateAuthCacheByKey(context.Context, string) {}
+
+func (s *refundAuthCacheInvalidatorStub) InvalidateAuthCacheByUserID(_ context.Context, userID int64) {
+	s.userIDs = append(s.userIDs, userID)
+}
+
+func (s *refundAuthCacheInvalidatorStub) InvalidateAuthCacheByGroupID(context.Context, int64) {}
+
+type refundBillingCacheStub struct {
+	userIDs []int64
+}
+
+func (s *refundBillingCacheStub) GetUserBalance(context.Context, int64) (float64, error) {
+	return 0, nil
+}
+func (s *refundBillingCacheStub) SetUserBalance(context.Context, int64, float64) error    { return nil }
+func (s *refundBillingCacheStub) DeductUserBalance(context.Context, int64, float64) error { return nil }
+func (s *refundBillingCacheStub) InvalidateUserBalance(_ context.Context, userID int64) error {
+	s.userIDs = append(s.userIDs, userID)
+	return nil
+}
+func (s *refundBillingCacheStub) GetSubscriptionCache(context.Context, int64, int64) (*SubscriptionCacheData, error) {
+	return nil, nil
+}
+func (s *refundBillingCacheStub) SetSubscriptionCache(context.Context, int64, int64, *SubscriptionCacheData) error {
+	return nil
+}
+func (s *refundBillingCacheStub) UpdateSubscriptionUsage(context.Context, int64, int64, float64) error {
+	return nil
+}
+func (s *refundBillingCacheStub) InvalidateSubscriptionCache(context.Context, int64, int64) error {
+	return nil
+}
+func (s *refundBillingCacheStub) GetAPIKeyRateLimit(context.Context, int64) (*APIKeyRateLimitCacheData, error) {
+	return nil, nil
+}
+func (s *refundBillingCacheStub) SetAPIKeyRateLimit(context.Context, int64, *APIKeyRateLimitCacheData) error {
+	return nil
+}
+func (s *refundBillingCacheStub) UpdateAPIKeyRateLimitUsage(context.Context, int64, float64) error {
+	return nil
+}
+func (s *refundBillingCacheStub) InvalidateAPIKeyRateLimit(context.Context, int64) error { return nil }
+
+type refundUserRepoStub struct {
+	*userRepoStub
+}
+
+func (s *refundUserRepoStub) UpdateBalance(_ context.Context, _ int64, amount float64) error {
+	if s.user == nil {
+		s.user = &User{}
+	}
+	s.user.Balance += amount
+	return nil
+}
 
 func TestValidateRefundRequestRejectsLegacyGuessedProviderInstance(t *testing.T) {
 	ctx := context.Background()
@@ -183,4 +245,32 @@ func TestGwRefundRejectsAlipayMerchantIdentitySnapshotMismatch(t *testing.T) {
 		Reason:        "snapshot mismatch",
 	})
 	require.ErrorContains(t, err, "alipay app_id mismatch")
+}
+
+func TestRollbackRefund_InvalidatesBalanceCaches(t *testing.T) {
+	ctx := context.Background()
+	userRepo := &refundUserRepoStub{userRepoStub: &userRepoStub{user: &User{ID: 7, Balance: 10}}}
+	authInvalidator := &refundAuthCacheInvalidatorStub{}
+	billingCache := &refundBillingCacheStub{}
+	svc := &PaymentService{
+		userRepo:             userRepo,
+		authCacheInvalidator: authInvalidator,
+		billingCache:         billingCache,
+	}
+
+	ok := svc.RollbackRefund(ctx, &RefundPlan{
+		OrderID:         1,
+		Order:           &dbent.PaymentOrder{UserID: 7},
+		RefundAmount:    10,
+		GatewayAmount:   10,
+		Reason:          "test",
+		DeductionType:   payment.DeductionTypeBalance,
+		BalanceToDeduct: 2.5,
+	}, errors.New("gateway failed"))
+	require.True(t, ok)
+	require.Equal(t, []int64{7}, authInvalidator.userIDs)
+	require.Eventually(t, func() bool {
+		return len(billingCache.userIDs) == 1
+	}, time.Second, 10*time.Millisecond)
+	require.Equal(t, []int64{7}, billingCache.userIDs)
 }
