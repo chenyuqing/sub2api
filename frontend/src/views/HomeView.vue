@@ -113,8 +113,12 @@
           <!-- Left: Text Content -->
           <div class="flex-1 text-center lg:text-left">
             <div class="mb-4 flex items-center justify-center gap-4 lg:justify-start">
-              <div class="h-16 w-16 overflow-hidden rounded-2xl shadow-lg md:h-20 md:w-20 lg:h-24 lg:w-24">
-                <img :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
+              <div class="group h-16 w-16 overflow-hidden rounded-2xl shadow-lg md:h-20 md:w-20 lg:h-24 lg:w-24">
+                <img
+                  :src="siteLogo || '/logo.png'"
+                  alt="Logo"
+                  class="h-full w-full origin-center object-contain transition-transform duration-300 ease-out will-change-transform group-hover:scale-110"
+                />
               </div>
               <h1
                 class="text-4xl font-bold leading-none text-ink-950 dark:text-white md:text-5xl lg:text-6xl"
@@ -297,7 +301,7 @@
             class="flex items-center gap-3 rounded-2xl border border-pink-200 bg-white/75 px-6 py-3.5 ring-1 ring-pink-500/15 backdrop-blur-sm dark:border-primary-800 dark:bg-dark-800/60"
           >
             <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-primary-500">
-              <span class="text-xs font-bold text-white">G</span>
+              <img src="/home-openai-gpt.png" alt="" class="h-7 w-7 object-contain" />
             </div>
             <div class="flex flex-col">
               <span class="text-sm font-semibold text-gray-800 dark:text-dark-100">OpenAI / GPT</span>

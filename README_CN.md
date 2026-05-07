@@ -36,9 +36,10 @@ Sub2API 是一个 AI API 网关平台，用于分发和管理 AI 产品订阅的
 ## 当前前端说明
 
 - 首页和登录后的外壳品牌名会随语言切换：英文为 `xLai Coding`，中文为 `象來Coding`
-- 首页标语也已本地化：英文 `One-click GPT access, happy coding!`，中文 `一键接入GPT，快乐coding！`
+- 首页标语也已本地化：英文 `One-click GPT Access, Happy Coding!`，中文 `一键接入GPT，快乐coding！`
 - 右上角语言切换会同步影响已登录后的侧边栏品牌标题
 - 当前对外展示的首页文案仅强调 OpenAI / GPT
+- 侧边栏左上角 logo 支持悬停放大，点击会返回 `/dashboard`
 
 ## 核心功能
 

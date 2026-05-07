@@ -179,11 +179,25 @@ func deductUsageBillingBalance(ctx context.Context, tx *sql.Tx, userID int64, am
 		UPDATE users
 		SET balance = balance - $1,
 			updated_at = NOW()
-		WHERE id = $2 AND deleted_at IS NULL
+		WHERE id = $2 AND deleted_at IS NULL AND balance >= $1
 		RETURNING balance
 	`, amount, userID).Scan(&newBalance)
 	if errors.Is(err, sql.ErrNoRows) {
-		return 0, service.ErrUserNotFound
+		var exists bool
+		checkErr := tx.QueryRowContext(ctx, `
+			SELECT EXISTS(
+				SELECT 1
+				FROM users
+				WHERE id = $1 AND deleted_at IS NULL
+			)
+		`, userID).Scan(&exists)
+		if checkErr != nil {
+			return 0, checkErr
+		}
+		if !exists {
+			return 0, service.ErrUserNotFound
+		}
+		return 0, service.ErrInsufficientBalance
 	}
 	if err != nil {
 		return 0, err

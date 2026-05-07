@@ -9,9 +9,17 @@
     <!-- Logo/Brand -->
     <div class="sidebar-header" :class="{ 'sidebar-header-collapsed': sidebarCollapsed }">
       <!-- Custom Logo or Default Logo -->
-      <div class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow">
-        <img v-if="settingsLoaded" :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
-      </div>
+      <router-link
+        to="/dashboard"
+        class="sidebar-logo group flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow"
+      >
+        <img
+          v-if="settingsLoaded"
+          :src="siteLogo || '/logo.png'"
+          alt="Logo"
+          class="h-full w-full origin-center object-contain transition-transform duration-300 ease-out will-change-transform group-hover:scale-110"
+        />
+      </router-link>
       <div class="sidebar-brand" :class="{ 'sidebar-brand-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
         <span class="sidebar-brand-title text-lg font-bold text-white">
           {{ siteName }}
@@ -84,7 +92,10 @@
               "
               @click="handleMenuItemClick(item.path)"
             >
-              <span v-if="item.iconSvg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.iconSvg)"></span>
+              <span v-if="item.iconSrc" class="sidebar-icon-image h-5 w-5 flex-shrink-0">
+                <img :src="item.iconSrc" alt="" class="h-full w-full object-contain" />
+              </span>
+              <span v-else-if="item.iconSvg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.iconSvg)"></span>
               <component v-else :is="item.icon" class="h-5 w-5 flex-shrink-0" />
               <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ item.label }}</span>
             </router-link>
@@ -109,7 +120,10 @@
             :data-tour="item.path === '/keys' ? 'sidebar-my-keys' : undefined"
             @click="handleMenuItemClick(item.path)"
           >
-            <span v-if="item.iconSvg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.iconSvg)"></span>
+            <span v-if="item.iconSrc" class="sidebar-icon-image h-5 w-5 flex-shrink-0">
+              <img :src="item.iconSrc" alt="" class="h-full w-full object-contain" />
+            </span>
+            <span v-else-if="item.iconSvg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.iconSvg)"></span>
             <component v-else :is="item.icon" class="h-5 w-5 flex-shrink-0" />
             <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ item.label }}</span>
           </router-link>
@@ -129,7 +143,10 @@
             :data-tour="item.path === '/keys' ? 'sidebar-my-keys' : undefined"
             @click="handleMenuItemClick(item.path)"
           >
-            <span v-if="item.iconSvg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.iconSvg)"></span>
+            <span v-if="item.iconSrc" class="sidebar-icon-image h-5 w-5 flex-shrink-0">
+              <img :src="item.iconSrc" alt="" class="h-full w-full object-contain" />
+            </span>
+            <span v-else-if="item.iconSvg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.iconSvg)"></span>
             <component v-else :is="item.icon" class="h-5 w-5 flex-shrink-0" />
             <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ item.label }}</span>
           </router-link>
@@ -157,7 +174,9 @@
           class="sidebar-link w-full"
           :class="{ 'sidebar-link-collapsed': sidebarCollapsed }"
         >
-          <SignalIcon class="h-5 w-5 flex-shrink-0" />
+          <span class="sidebar-icon-image h-5 w-5 flex-shrink-0">
+            <img src="/sidebar-icons/service-status.png" alt="" class="h-full w-full object-contain" />
+          </span>
           <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ navLabel('服务状态', 'Service Status') }}</span>
         </router-link>
       </div>
@@ -169,8 +188,9 @@
         :class="{ 'sidebar-link-collapsed': sidebarCollapsed }"
         :title="sidebarCollapsed ? (isDark ? navLabel('浅色模式', 'Light Mode') : navLabel('深色模式', 'Dark Mode')) : undefined"
       >
-        <SunIcon v-if="isDark" class="h-5 w-5 flex-shrink-0 text-pink-300" />
-        <MoonIcon v-else class="h-5 w-5 flex-shrink-0" />
+        <span class="sidebar-icon-image h-5 w-5 flex-shrink-0">
+          <img src="/sidebar-icons/dark-mode.png" alt="" class="h-full w-full object-contain" />
+        </span>
         <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{
           isDark ? navLabel('浅色模式', 'Light Mode') : navLabel('深色模式', 'Dark Mode')
         }}</span>
@@ -213,6 +233,7 @@ interface NavItem {
   label: string
   icon: unknown
   iconSvg?: string
+  iconSrc?: string
   hideInSimpleMode?: boolean
   children?: NavItem[]
   /**
@@ -525,36 +546,6 @@ const CogIcon = {
     )
 }
 
-const SunIcon = {
-  render: () =>
-    h(
-      'svg',
-      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
-      [
-        h('path', {
-          'stroke-linecap': 'round',
-          'stroke-linejoin': 'round',
-          d: 'M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z'
-        })
-      ]
-    )
-}
-
-const MoonIcon = {
-  render: () =>
-    h(
-      'svg',
-      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
-      [
-        h('path', {
-          'stroke-linecap': 'round',
-          'stroke-linejoin': 'round',
-          d: 'M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z'
-        })
-      ]
-    )
-}
-
 const ChevronDoubleLeftIcon = {
   render: () =>
     h(
@@ -679,16 +670,16 @@ const flagAdminPayment = () => adminSettingsStore.paymentEnabled
 function buildSelfNavItems(withDashboard: boolean): NavItem[] {
   const items: NavItem[] = []
   if (withDashboard) {
-    items.push({ path: '/dashboard', label: navLabel('仪表盘', 'Dashboard'), icon: DashboardIcon })
+    items.push({ path: '/dashboard', label: navLabel('仪表盘', 'Dashboard'), icon: DashboardIcon, iconSrc: '/sidebar-icons/dashboard.png' })
   }
   items.push(
-    { path: '/keys', label: navLabel('API 密钥', 'API Keys'), icon: KeyIcon },
-    { path: '/usage', label: navLabel('使用记录', 'Usage'), icon: ChartIcon, hideInSimpleMode: true },
+    { path: '/keys', label: navLabel('API 密钥', 'API Keys'), icon: KeyIcon, iconSrc: '/sidebar-icons/key.png' },
+    { path: '/usage', label: navLabel('使用记录', 'Usage'), icon: ChartIcon, iconSrc: '/sidebar-icons/usage.png', hideInSimpleMode: true },
     { path: '/purchase', label: navLabel('充值/订阅', 'Recharge / Subscription'), icon: RechargeSubscriptionIcon, hideInSimpleMode: true, featureFlag: flagPayment },
     { path: '/orders', label: navLabel('我的订单', 'My Orders'), icon: OrderListIcon, hideInSimpleMode: true, featureFlag: flagPayment },
-    { path: '/feedbacks', label: navLabel('反馈工单', 'Feedbacks'), icon: TicketIcon, hideInSimpleMode: true },
-    { path: '/redeem', label: navLabel('兑换码', 'Redeem Codes'), icon: GiftIcon, hideInSimpleMode: true },
-    { path: '/profile', label: navLabel('个人资料', 'Profile'), icon: UserIcon },
+    { path: '/feedbacks', label: navLabel('反馈工单', 'Feedbacks'), icon: TicketIcon, iconSrc: '/sidebar-icons/feedbacks.png', hideInSimpleMode: true },
+    { path: '/redeem', label: navLabel('兑换码', 'Redeem Codes'), icon: GiftIcon, iconSrc: '/sidebar-icons/redeem.png', hideInSimpleMode: true },
+    { path: '/profile', label: navLabel('个人资料', 'Profile'), icon: UserIcon, iconSrc: '/sidebar-icons/profile.png' },
     ...customMenuItemsForUser.value.map((item): NavItem => ({
       path: `/custom/${item.id}`,
       label: item.label,
@@ -737,7 +728,7 @@ const customMenuItemsForAdmin = computed(() => {
 const adminNavItems = computed((): NavItem[] => {
   void locale.value
   const baseItems: NavItem[] = [
-    { path: '/admin/dashboard', label: navLabel('仪表盘', 'Dashboard'), icon: DashboardIcon },
+    { path: '/admin/dashboard', label: navLabel('仪表盘', 'Dashboard'), icon: DashboardIcon, iconSrc: '/sidebar-icons/dashboard.png' },
     { path: '/admin/ops', label: navLabel('运维监控', 'Ops'), icon: ChartIcon, featureFlag: flagOpsMonitoring },
     { path: '/admin/users', label: navLabel('用户管理', 'Users'), icon: UsersIcon, hideInSimpleMode: true },
     { path: '/admin/groups', label: navLabel('分组管理', 'Groups'), icon: FolderIcon, hideInSimpleMode: true },
@@ -771,7 +762,7 @@ const adminNavItems = computed((): NavItem[] => {
         { path: '/admin/orders/plans', label: navLabel('订阅套餐', 'Plans'), icon: CreditCardIcon },
       ],
     },
-    { path: '/admin/usage', label: navLabel('使用记录', 'Usage'), icon: ChartIcon }
+    { path: '/admin/usage', label: navLabel('使用记录', 'Usage'), icon: ChartIcon, iconSrc: '/sidebar-icons/usage.png' }
   ]
 
   const visible = applyFeatureFlags(baseItems)
@@ -779,7 +770,7 @@ const adminNavItems = computed((): NavItem[] => {
   // 简单模式下，在系统设置前插入 API密钥
   if (authStore.isSimpleMode) {
     const filtered = visible.filter(item => !item.hideInSimpleMode)
-    filtered.push({ path: '/keys', label: navLabel('API 密钥', 'API Keys'), icon: KeyIcon })
+    filtered.push({ path: '/keys', label: navLabel('API 密钥', 'API Keys'), icon: KeyIcon, iconSrc: '/sidebar-icons/key.png' })
     filtered.push({ path: '/admin/settings', label: navLabel('系统设置', 'Settings'), icon: CogIcon })
     for (const cm of customMenuItemsForAdmin.value) {
       filtered.push({ path: `/custom/${cm.id}`, label: cm.label, icon: null, iconSvg: cm.icon_svg })
