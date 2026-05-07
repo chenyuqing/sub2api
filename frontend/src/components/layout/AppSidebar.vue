@@ -675,6 +675,7 @@ function buildSelfNavItems(withDashboard: boolean): NavItem[] {
   items.push(
     { path: '/keys', label: navLabel('API 密钥', 'API Keys'), icon: KeyIcon, iconSrc: '/sidebar-icons/key.png' },
     { path: '/usage', label: navLabel('使用记录', 'Usage'), icon: ChartIcon, iconSrc: '/sidebar-icons/usage.png', hideInSimpleMode: true },
+    { path: '/subscriptions', label: navLabel('我的订阅', 'My Subscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
     { path: '/purchase', label: navLabel('充值/订阅', 'Recharge / Subscription'), icon: RechargeSubscriptionIcon, hideInSimpleMode: true, featureFlag: flagPayment },
     { path: '/orders', label: navLabel('我的订单', 'My Orders'), icon: OrderListIcon, hideInSimpleMode: true, featureFlag: flagPayment },
     { path: '/feedbacks', label: navLabel('反馈工单', 'Feedbacks'), icon: TicketIcon, iconSrc: '/sidebar-icons/feedbacks.png', hideInSimpleMode: true },
