@@ -627,11 +627,8 @@ onMounted(async () => {
   await Promise.allSettled([
     refreshProfile(),
     loadPublicSettings(),
-    loadMonthlyStats()
+    loadMonthlyStats(),
+    loadAffiliateDetail()
   ])
-
-  if (affiliateEnabled.value) {
-    await loadAffiliateDetail()
-  }
 })
 </script>
