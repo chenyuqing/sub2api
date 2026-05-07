@@ -37,8 +37,9 @@ Sub2API is an AI API gateway platform designed to distribute and manage API quot
 ## Current UI Notes
 
 - The public homepage and logged-in shell now use locale-aware branding: `xLai Coding` in English and `象來Coding` in Chinese.
-- The homepage hero subtitle is also localized: `One-click GPT access, happy coding!` / `一键接入GPT，快乐coding！`
+- The homepage hero subtitle is also localized: `One-click GPT Access, Happy Coding!` / `一键接入GPT，快乐coding！`
 - The top-right language switch affects the visible shell, including the sidebar brand title after login.
+- The sidebar logo remains hover-zoomed and links back to `/dashboard` with a relative route.
 - The public-facing demo UI currently highlights OpenAI / GPT only on the landing page.
 
 ## Features

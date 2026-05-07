@@ -8,7 +8,7 @@ export default {
     switchToLight: 'Switch to Light Mode',
     switchToDark: 'Switch to Dark Mode',
     brandName: 'xLai Coding',
-    siteSubtitle: 'One-click GPT access, happy coding!',
+    siteSubtitle: 'One-click GPT Access, Happy Coding!',
     dashboard: 'Dashboard',
     login: 'Login',
     getStarted: 'Get Started',
